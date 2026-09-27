@@ -4,11 +4,17 @@ body{background:#050914!important}
 body:before{opacity:.42!important}
 .app{position:relative;isolation:isolate}
 .app:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(1,4,12,.46),rgba(1,4,12,.72)),radial-gradient(circle at 18% 4%,rgba(74,92,210,.18),transparent 30%),radial-gradient(circle at 86% 8%,rgba(177,70,157,.12),transparent 28%)}
-.sidebar{background:linear-gradient(180deg,rgba(7,12,27,.82),rgba(4,8,18,.70))!important}
+/* Sidebar: one continuous surface. The old translucent backdrop could reveal the page behind it and create a horizontal seam. */
+.sidebar{position:sticky!important;top:0!important;height:100vh!important;height:100dvh!important;align-self:start!important;overflow:hidden!important;isolation:isolate!important;background:#071027!important;border-right:1px solid rgba(255,255,255,.14)!important;box-shadow:24px 0 80px rgba(0,0,0,.28)!important}
+.sidebar:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,24,57,.96) 0%,rgba(8,17,42,.97) 48%,rgba(5,12,30,.98) 100%),radial-gradient(circle at 15% 5%,rgba(92,112,255,.13),transparent 35%)}
+.sidebar>*{position:relative;z-index:1}
+.sidebar .nav{background:transparent!important}
+.sidebar .nav button{background:transparent!important}
+.sidebar .nav button.active,.sidebar .nav button:hover{background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(105,122,255,.16))!important}
 .topbar{background:rgba(3,7,16,.50)!important}
 .glass,.card{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.045))!important;border-color:rgba(255,255,255,.20)!important}
 .hero{background:linear-gradient(135deg,rgba(39,91,171,.36),rgba(63,125,180,.14) 48%,rgba(125,54,123,.20))!important}
 .ai-hero{background:linear-gradient(135deg,rgba(65,68,175,.36),rgba(105,61,160,.23),rgba(35,105,125,.16))!important}
 .link-btn{padding:8px 12px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.08);color:#fff}
 .side-task{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.13)}.side-task:last-child{border-bottom:0}.side-task b,.class-row b{font-size:13px}.side-task small,.class-row small{display:block;margin-top:4px;color:rgba(235,240,255,.64);font-size:11px}.side-task em{font-style:normal;font-size:10px;padding:7px 10px;border-radius:999px;background:linear-gradient(135deg,rgba(255,110,177,.52),rgba(150,93,255,.44));border:1px solid rgba(255,255,255,.20)}.task-dot{width:19px;height:19px;border:1px solid rgba(255,255,255,.38);border-radius:50%;background:rgba(255,255,255,.06)}.class-row{display:grid;grid-template-columns:74px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.13)}.class-row:last-child{border-bottom:0}.time{font-size:12px;font-weight:800;color:#fff}.course-bars{display:grid;gap:10px}.course-bars>div{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;font-size:12px}.course-bars i{height:7px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden}.course-bars i b{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#5ad9ff,#7180ff,#c875ff)}
-@media(max-width:900px){.app:before{background:linear-gradient(180deg,rgba(1,4,12,.36),rgba(1,4,12,.68))}.liquid-side{grid-template-columns:1fr!important}.course-bars>div{grid-template-columns:120px 1fr}}
+@media(max-width:900px){.app:before{background:linear-gradient(180deg,rgba(1,4,12,.36),rgba(1,4,12,.68))}.liquid-side{grid-template-columns:1fr!important}.course-bars>div{grid-template-columns:120px 1fr}.sidebar{position:fixed!important}}
