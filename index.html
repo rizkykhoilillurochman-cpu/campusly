@@ -1,16 +1,57 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#111827" />
-  <meta name="description" content="Campusly — Your Academic Journey, Simplified." />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icon.svg" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Campusly</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f7fb;color:#111827}.wrap{max-width:1100px;margin:auto;padding:28px}.top{display:flex;align-items:center;gap:12px;margin-bottom:28px;flex-wrap:wrap}.logo{width:44px;height:44px;border-radius:14px;background:#111827;color:#fff;display:grid;place-items:center;font-weight:800}.brand{font-size:24px;font-weight:800}.sub{font-size:13px;color:#667085}.nav{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}.nav button{border:0;border-radius:10px;padding:10px 13px;background:#e9ebf0;color:#344054;cursor:pointer}.nav button.active{background:#5b5cf0;color:#fff}.hero{background:#fff;border:1px solid #e5e7eb;border-radius:22px;padding:28px;box-shadow:0 12px 35px rgba(17,24,39,.07)}h1{font-size:34px;margin:0 0 8px}.muted{color:#667085}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:20px}.value{font-size:28px;font-weight:800;margin-top:6px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.primary{background:#5b5cf0!important;color:#fff!important}.btn{border:0;border-radius:10px;padding:11px 15px;cursor:pointer;background:#e9ebf0}.content{margin-top:18px}@media(max-width:750px){.grid{grid-template-columns:repeat(2,1fr)}.nav{margin-left:0;width:100%}}@media(max-width:450px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script src="app-fallback.js"></script>
+  <main class="wrap">
+    <header class="top">
+      <div class="logo">C</div>
+      <div><div class="brand">Campusly</div><div class="sub">Your Academic Journey, Simplified.</div></div>
+      <nav class="nav" id="nav"></nav>
+    </header>
+    <section id="app"></section>
+  </main>
+  <script>
+    (function(){
+      'use strict';
+      var routes=['Home','Tasks','Notes','Jadwal','GPA','AI','Profil'];
+      var current='Home';
+      var app=document.getElementById('app');
+      var nav=document.getElementById('nav');
+      function renderNav(){
+        nav.innerHTML='';
+        routes.forEach(function(name){
+          var b=document.createElement('button');
+          b.textContent=name;
+          if(name===current)b.className='active';
+          b.onclick=function(){current=name;render()};
+          nav.appendChild(b);
+        });
+      }
+      function home(){
+        return '<div class="hero"><div class="muted">CAMPUSLY</div><h1>Halo, Rizky 👋</h1><p class="muted">Web Campusly sudah berhasil online.</p><div class="grid"><div class="card"><div class="muted">Semester</div><div class="value">1</div></div><div class="card"><div class="muted">GPA</div><div class="value">—</div></div><div class="card"><div class="muted">Target GPA</div><div class="value">3.75</div></div><div class="card"><div class="muted">Tasks aktif</div><div class="value">0</div></div></div><div class="actions"><button class="btn primary" onclick="window.campusGo(\'Tasks\')">+ Tambah Task</button><button class="btn" onclick="window.campusGo(\'Profil\')">Atur Profil</button></div></div>';
+      }
+      function generic(title,text){return '<div class="hero"><div class="muted">CAMPUSLY</div><h1>'+title+'</h1><p class="muted">'+text+'</p></div>'}
+      function render(){
+        renderNav();
+        if(current==='Home')app.innerHTML=home();
+        else if(current==='Tasks')app.innerHTML=generic('Tasks','Kelola tugas kuliah lo.');
+        else if(current==='Notes')app.innerHTML=generic('Notes','Catatan kuliah dan ide lo.');
+        else if(current==='Jadwal')app.innerHTML=generic('Jadwal','Jadwal kuliah lo.');
+        else if(current==='GPA')app.innerHTML=generic('GPA','Kalkulator GPA Campusly.');
+        else if(current==='AI')app.innerHTML=generic('Campusly AI','Asisten akademik akan kita aktifkan setelah konfigurasi API.');
+        else app.innerHTML=generic('Profil','Profil dan pengaturan akun Campusly.');
+      }
+      window.campusGo=function(name){current=name;render()};
+      render();
+    })();
+  </script>
 </body>
 </html>
