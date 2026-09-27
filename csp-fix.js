@@ -1,40 +1,34 @@
-/* CSP compatibility bridge v3.
-   Strict hosts may block inline onclick handlers before they can run.
-   For the critical onboarding controls, remove the inline attribute entirely
-   and replace it with a normal addEventListener handler. */
+/* CSP compatibility bridge v4.
+   The app historically renders inline onclick attributes. On hosts with a
+   strict script-src policy those handlers are blocked. We intercept the
+   onboarding buttons during the capture phase, before the blocked inline
+   handler can execute, and call the real functions from app.js. */
 (function(){
-  function fn(name){ return typeof window[name] === 'function' ? window[name] : null; }
-  function run(name){ var f=fn(name); if(f) return f(); }
-
-  function wire(){
-    var buttons=document.querySelectorAll('.onboarding button');
-    buttons.forEach(function(btn){
-      if(btn.__campuslyWired) return;
-      var text=(btn.textContent||'').trim();
-      var raw=btn.getAttribute('onclick')||'';
-      var action=null;
-      if(raw==='obNext()' || text==='Continue' || text==='Gas masuk Campusly') action='obNext';
-      else if(raw==='obBack()' || text==='Back') action='obBack';
-      if(!action) return;
-
-      /* Remove the CSP-blocked inline handler by replacing the node. */
-      var clean=btn.cloneNode(true);
-      clean.removeAttribute('onclick');
-      clean.__campuslyWired=true;
-      clean.addEventListener('click',function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        run(action);
-      });
-      btn.replaceWith(clean);
-    });
+  function call(name){
+    try {
+      var fn=window[name];
+      if(typeof fn==='function') fn();
+    } catch(err) {
+      console.error('Campusly onboarding action failed:',err);
+    }
   }
 
-  function start(){
-    wire();
-    new MutationObserver(wire).observe(document.documentElement,{subtree:true,childList:true});
-  }
+  document.addEventListener('click',function(e){
+    var btn=e.target && e.target.closest ? e.target.closest('.onboarding button') : null;
+    if(!btn) return;
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start);
-  else start();
+    var text=(btn.textContent||'').trim();
+    var raw=btn.getAttribute('onclick')||'';
+    var action=null;
+
+    if(raw==='obNext()' || text==='Continue' || text==='Gas masuk Campusly') action='obNext';
+    else if(raw==='obBack()' || text==='Back') action='obBack';
+    if(!action) return;
+
+    /* Stop the CSP-blocked inline handler from reaching the target. */
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    call(action);
+  },true);
 })();
