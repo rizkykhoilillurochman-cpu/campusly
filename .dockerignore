@@ -1,0 +1,10 @@
+node_modules
+.git
+*.zip
+*.log
+.env
+server-data.json
+campusly.sqlite
+campusly.sqlite-shm
+campusly.sqlite-wal
+data
