@@ -1,8 +1,7 @@
-/* CSP compatibility bridge v4.
-   The app historically renders inline onclick attributes. On hosts with a
-   strict script-src policy those handlers are blocked. We intercept the
-   onboarding buttons during the capture phase, before the blocked inline
-   handler can execute, and call the real functions from app.js. */
+/* Campusly CSP bridge v5.
+   The hosting CSP blocks inline onclick handlers. Keep onboarding controls
+   functional without relying on inline JavaScript. This file is loaded
+   before app.js so the capture handlers are installed before the UI renders. */
 (function(){
   function call(name){
     try {
@@ -13,22 +12,40 @@
     }
   }
 
-  document.addEventListener('click',function(e){
-    var btn=e.target && e.target.closest ? e.target.closest('.onboarding button') : null;
-    if(!btn) return;
-
+  function actionFor(btn){
+    if(!btn || !btn.closest) return null;
+    var root=btn.closest('.onboarding');
+    if(!root) return null;
     var text=(btn.textContent||'').trim();
     var raw=btn.getAttribute('onclick')||'';
-    var action=null;
+    if(raw==='obNext()' || text==='Continue' || text==='Gas masuk Campusly') return 'obNext';
+    if(raw==='obBack()' || text==='Back') return 'obBack';
+    return null;
+  }
 
-    if(raw==='obNext()' || text==='Continue' || text==='Gas masuk Campusly') action='obNext';
-    else if(raw==='obBack()' || text==='Back') action='obBack';
+  function handle(e){
+    var btn=e.target && e.target.closest ? e.target.closest('.onboarding button') : null;
+    var action=actionFor(btn);
     if(!action) return;
-
-    /* Stop the CSP-blocked inline handler from reaching the target. */
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
     call(action);
+  }
+
+  document.addEventListener('click',handle,true);
+  document.addEventListener('pointerup',function(e){
+    /* Pointer fallback for hosts that suppress the normal click activation. */
+    var btn=e.target && e.target.closest ? e.target.closest('.onboarding button') : null;
+    if(!actionFor(btn)) return;
+    if(e.pointerType==='mouse' || e.pointerType==='pen') return;
+    handle(e);
+  },true);
+
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter' && e.key!==' ') return;
+    var btn=e.target && e.target.closest ? e.target.closest('.onboarding button') : null;
+    if(!actionFor(btn)) return;
+    handle(e);
   },true);
 })();
