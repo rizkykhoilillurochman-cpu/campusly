@@ -12,4 +12,8 @@
     }
   }catch(e){console.warn('Campusly state repair skipped',e)}
   document.documentElement.classList.add('campusly-mobile-ready');
+  // Load the mobile experience layer from the first synchronous boot script so it
+  // cannot disappear behind an old HTML shell or stale deferred script order.
+  const link=document.createElement('link');link.rel='stylesheet';link.href='/mobile-experience.css?v=2';document.head.appendChild(link);
+  const script=document.createElement('script');script.src='/mobile-experience.js?v=2';script.defer=true;document.head.appendChild(script);
 })();
