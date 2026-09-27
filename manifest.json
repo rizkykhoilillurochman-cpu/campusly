@@ -2,7 +2,7 @@
   "name": "Campusly",
   "short_name": "Campusly",
   "description": "Campusly academic planner, tasks, notes, schedule and GPA tracker",
-  "start_url": "./",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f7fb",
   "theme_color": "#111827",
