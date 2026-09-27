@@ -22,6 +22,14 @@
 - [x] Keyboard focus styling
 - [x] prefers-reduced-motion support
 - [x] Capacitor configuration contract present
+- [x] Mobile-first responsive shell and safe-area handling
+- [x] Fixed sidebar/main layout separation on desktop
+- [x] Mobile bottom navigation + slide-out full navigation
+- [x] AI guest-session recovery and local fallback
+- [x] AI conversation persistence in local storage
+- [x] AI document extraction handoff
+- [x] AI voice input where browser support exists
+- [x] Persisted-state normalization before app boot
 
 ## Pending external/integration QA
 - [ ] Google OAuth with real client credentials
@@ -35,3 +43,4 @@
 - [ ] Penetration/security configuration audit
 - [ ] Android SDK + Capacitor release build
 - [ ] Production deployment and rollback test
+- [ ] Verify production OPENAI_API_KEY and model configuration
