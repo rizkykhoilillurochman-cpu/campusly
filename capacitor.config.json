@@ -1,0 +1,6 @@
+{
+  "appId": "com.campusly.app",
+  "appName": "Campusly",
+  "webDir": ".",
+  "server": {"androidScheme": "https"}
+}

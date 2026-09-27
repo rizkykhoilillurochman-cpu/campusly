@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": "9557659f-ac1a-4f69-b334-bcf1b13a977e",
+      "email": "qa@example.com",
+      "passwordHash": "0cdb5d5d80ef97c25016a65787d12309:34af5ad6acc4aa5fc7950f613aa91d1863a43bcc51f99073fb660bffab3da96c7c071e931707e988779fdb81993f04c6988b26f9e9ee1e1373a3dc25b952e053",
+      "createdAt": "2026-09-27T13:10:42.262Z"
+    }
+  ],
+  "data": {
+    "9557659f-ac1a-4f69-b334-bcf1b13a977e": {
+      "test": true
+    }
+  }
+}

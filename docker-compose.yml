@@ -1,0 +1,14 @@
+services:
+  campusly:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+    volumes:
+      - campusly-data:/app/data
+    environment:
+      PORT: 8787
+volumes:
+  campusly-data:
