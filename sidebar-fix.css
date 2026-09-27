@@ -4,4 +4,5 @@
 .sidebar::after{content:""!important;position:absolute!important;inset:0!important;z-index:-1!important;pointer-events:none!important;border-right:1px solid rgba(255,255,255,.08)!important;background:linear-gradient(90deg,rgba(255,255,255,.025),transparent 55%)!important}
 .sidebar>*{position:relative!important;z-index:1!important}
 .main{margin-left:260px!important;min-width:0!important}
+.cmd{display:none!important}
 @media(max-width:900px){.sidebar{width:min(86vw,300px)!important}.main{margin-left:0!important}}
