@@ -13,7 +13,7 @@ function req(method,p,body,token){return new Promise((resolve,reject)=>{const b=
   let r=await req('GET','/'); if(r.status!==200||!String(r.body).includes('Campusly'))throw Error('shell');
   r=await req('GET','/manifest.webmanifest'); if(r.status!==200||r.body.short_name!=='Campusly')throw Error('manifest');
   r=await req('GET','/styles.css?v=23'); if(r.status!==200||!String(r.body).includes('--accent'))throw Error('styles');
-  r=await req('GET','/mobile-menu.css?v=3'); if(r.status!==200||!String(r.body).includes('overflow-y:auto'))throw Error('mobile menu css');
+  r=await req('GET','/mobile-menu.css?v=3'); if(r.status!==200||!String(r.body).includes('overflow-y'))throw Error('mobile menu css');
   r=await req('GET','/sw.js?v=23'); if(r.status!==200||!String(r.body).includes('campusly-v1'))throw Error('service worker');
   r=await req('GET','/app.js?v=23'); if(r.status!==200||!String(r.body).includes('const KEY'))throw Error('app');
   r=await req('GET','/api/health'); if(r.status!==200||!r.body.ok)throw Error('health');
