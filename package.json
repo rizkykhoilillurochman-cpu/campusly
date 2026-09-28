@@ -1,10 +1,10 @@
 {
   "name": "campusly",
-  "version": "1.0.0-rc2",
+  "version": "1.1.0-ai-workbench",
   "private": true,
   "scripts": {
     "start": "node server-ai.js",
-    "check": "node --check app.js && node --check server.js && node --check startup.js && node --check blitz-entry.js && node --check server-ai.js",
+    "check": "node --check app.js && node --check server.js && node --check startup.js && node --check blitz-entry.js && node --check server-ai.js && node --check ai-core.js",
     "start:prod": "NODE_ENV=production node server-ai.js",
     "test": "node tests/integration.js"
   },
