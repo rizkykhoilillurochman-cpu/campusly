@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campusly">
-<link rel="manifest" href="/manifest.webmanifest?v=23">
+<link rel="manifest" href="/manifest.webmanifest?v=24">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="stylesheet" href="/styles.css?v=23">
@@ -34,11 +34,12 @@
   window.addEventListener('unhandledrejection',function(){fatal()});
   try{
     if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js?v=23').catch(function(){})
+      navigator.serviceWorker.register('/sw.js?v=24').catch(function(){})
     }
   }catch(e){}
 })();
 </script>
 <script src="/app.js?v=23"></script>
+<script src="/ai-fix.js?v=1"></script>
 </body>
 </html>
