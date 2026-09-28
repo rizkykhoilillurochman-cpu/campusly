@@ -10,7 +10,7 @@
 <meta name="apple-touch-fullscreen" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campusly">
-<link rel="manifest" href="/manifest.webmanifest?v=28">
+<link rel="manifest" href="/manifest.webmanifest?v=29">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="stylesheet" href="/styles.css?v=24">
@@ -33,12 +33,13 @@
   function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}
   window.addEventListener('error',function(e){if(e&&e.error)fatal()});
   window.addEventListener('unhandledrejection',function(){fatal()});
-  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=2').catch(function(){})}}catch(e){}
+  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=3').catch(function(){})}}catch(e){}
 })();
 </script>
-<script src="/app.js?v=26"></script>
-<script src="/ai-runtime.js?v=6"></script>
-<script src="/enhancements.js?v=1"></script>
+<script src="/app.js?v=27"></script>
+<script src="/ai-runtime.js?v=7"></script>
+<script src="/enhancements.js?v=2"></script>
 <script src="/developer-contact.js?v=2"></script>
+<script src="/ai-core.js?v=1"></script>
 </body>
 </html>
