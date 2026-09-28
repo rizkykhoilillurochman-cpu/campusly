@@ -14,7 +14,7 @@ const DB_FILE = path.join(DATA_DIR, 'campusly.sqlite');
 const MAX_JSON = 2 * 1024 * 1024;
 const MAX_FILE = 15 * 1024 * 1024;
 const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
-const PUBLIC = new Set(['index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest','manifest.json','sw.js','icon.svg']);
+const PUBLIC = new Set(['index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest','manifest.json','sw.js','icon.svg','ai-fix.js']);
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_FILE);
@@ -128,8 +128,8 @@ async function callOpenAI(messages){
 
 async function route(req,res){
   headers(res);const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-  if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{ok:true,service:'campusly-api',storage:'sqlite',version:'1.1.0-gemini',uptime:Math.round(process.uptime())});
-  if(req.method==='GET'&&url.pathname==='/api/ready'){try{db.prepare('SELECT 1 AS ok').get();return json(res,200,{ready:true,storage:'sqlite',version:'1.1.0-gemini'});}catch{return json(res,503,{ready:false});}}
+  if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{ok:true,service:'campusly-api',storage:'sqlite',version:'1.2.0-gemini-public-ai',uptime:Math.round(process.uptime())});
+  if(req.method==='GET'&&url.pathname==='/api/ready'){try{db.prepare('SELECT 1 AS ok').get();return json(res,200,{ready:true,storage:'sqlite',version:'1.2.0-gemini-public-ai'});}catch{return json(res,503,{ready:false});}}
   if(url.pathname==='/api/auth/google'&&req.method==='GET')return googleStart(res);
   if(url.pathname==='/api/auth/google/callback'&&req.method==='GET')return googleCallback(req,res,url);
   if(url.pathname==='/api/auth/google/exchange'&&req.method==='POST'){const b=await readJson(req),code=String(b.code||''),entry=oauthCodes.get(code);if(!entry||entry.expiresAt<Date.now()){oauthCodes.delete(code);return json(res,400,{error:'Kode OAuth tidak valid atau kedaluwarsa.'});}oauthCodes.delete(code);return json(res,200,{token:issueSession(entry.userId),user:user(entry.userId)});}
@@ -137,21 +137,22 @@ async function route(req,res){
     if((url.pathname==='/api/auth/register'||url.pathname==='/api/auth/login')&&!rate(req))return json(res,429,{error:'Terlalu banyak percobaan. Coba lagi sebentar.'});
     if(url.pathname==='/api/auth/register'&&req.method==='POST'){const b=await readJson(req),email=String(b.email||'').trim().toLowerCase(),password=String(b.password||'');if(!/^\S+@\S+\.\S+$/.test(email)||password.length<8)return json(res,400,{error:'Email valid dan password minimal 8 karakter diperlukan.'});if(db.prepare('SELECT 1 FROM users WHERE email=?').get(email))return json(res,409,{error:'Akun sudah terdaftar.'});const id=crypto.randomUUID();db.prepare('INSERT INTO users(id,email,password_hash,created_at) VALUES(?,?,?,?)').run(id,email,hashPassword(password),new Date().toISOString());db.prepare('INSERT INTO user_data(user_id,data,updated_at) VALUES(?,?,?)').run(id,'{}',new Date().toISOString());return json(res,201,{token:issueSession(id),user:{id,email}});}
     if(url.pathname==='/api/auth/login'&&req.method==='POST'){const b=await readJson(req),email=String(b.email||'').trim().toLowerCase(),u=db.prepare('SELECT * FROM users WHERE email=?').get(email);if(!u||!u.password_hash||!verifyPassword(String(b.password||''),u.password_hash))return json(res,401,{error:'Email atau password salah.'});return json(res,200,{token:issueSession(u.id),user:{id:u.id,email:u.email}});}
-    const uid=auth(req);
-    if(url.pathname==='/api/auth/me'&&req.method==='GET'){if(!uid)return json(res,401,{error:'Unauthorized'});return json(res,200,{user:user(uid)});}
-    if(url.pathname==='/api/auth/logout'&&req.method==='POST'){const h=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');if(h)db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hashToken(h));return json(res,200,{ok:true});}
-    if(url.pathname==='/api/sync'&&req.method==='GET'){if(!uid)return json(res,401,{error:'Unauthorized'});const r=db.prepare('SELECT data,updated_at FROM user_data WHERE user_id=?').get(uid);return json(res,200,{data:r?JSON.parse(r.data):{},updatedAt:r?.updated_at||null});}
-    if(url.pathname==='/api/sync'&&req.method==='PUT'){if(!uid)return json(res,401,{error:'Unauthorized'});const b=await readJson(req),data=b.data||{},now=new Date().toISOString();db.prepare(`INSERT INTO user_data(user_id,data,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`).run(uid,JSON.stringify(data),now);return json(res,200,{ok:true,syncedAt:now});}
-    if(url.pathname==='/api/documents/extract'&&req.method==='POST'){if(!uid)return json(res,401,{error:'Unauthorized'});const name=String(req.headers['x-file-name']||'document'),type=String(req.headers['x-file-type']||'application/octet-stream');const data=await readRaw(req);try{return json(res,200,{name,type,size:data.length,text:await extractFile(name,type,data)});}catch(e){return json(res,415,{error:e.message});}}
     if(url.pathname==='/api/ai'&&req.method==='POST'){
-      if(!uid)return json(res,401,{error:'Unauthorized'});
+      if(!rate(req))return json(res,429,{error:'Terlalu banyak permintaan AI. Coba lagi sebentar.'});
       const b=await readJson(req),messages=Array.isArray(b.messages)?b.messages:[];
+      if(!messages.length)return json(res,400,{error:'Pesan AI kosong.'});
       try{
         if(getenv('GEMINI_API_KEY')){const text=await callGemini(messages);return json(res,200,{text,provider:'gemini',model:normalizeGeminiModel(getenv('GEMINI_MODEL'))});}
         if(getenv('OPENAI_API_KEY')){const text=await callOpenAI(messages);return json(res,200,{text,provider:'openai',model:getenv('OPENAI_MODEL')||'gpt-4o-mini'});}
         return json(res,503,{error:'AI provider belum dikonfigurasi di server. Isi GEMINI_API_KEY dan GEMINI_MODEL.'});
       }catch(e){console.error('AI request failed:',e.message);return json(res,502,{error:e.message});}
     }
+    const uid=auth(req);
+    if(url.pathname==='/api/auth/me'&&req.method==='GET'){if(!uid)return json(res,401,{error:'Unauthorized'});return json(res,200,{user:user(uid)});}
+    if(url.pathname==='/api/auth/logout'&&req.method==='POST'){const h=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');if(h)db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hashToken(h));return json(res,200,{ok:true});}
+    if(url.pathname==='/api/sync'&&req.method==='GET'){if(!uid)return json(res,401,{error:'Unauthorized'});const r=db.prepare('SELECT data,updated_at FROM user_data WHERE user_id=?').get(uid);return json(res,200,{data:r?JSON.parse(r.data):{},updatedAt:r?.updated_at||null});}
+    if(url.pathname==='/api/sync'&&req.method==='PUT'){if(!uid)return json(res,401,{error:'Unauthorized'});const b=await readJson(req),data=b.data||{},now=new Date().toISOString();db.prepare(`INSERT INTO user_data(user_id,data,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at`).run(uid,JSON.stringify(data),now);return json(res,200,{ok:true,syncedAt:now});}
+    if(url.pathname==='/api/documents/extract'&&req.method==='POST'){if(!uid)return json(res,401,{error:'Unauthorized'});const name=String(req.headers['x-file-name']||'document'),type=String(req.headers['x-file-type']||'application/octet-stream');const data=await readRaw(req);try{return json(res,200,{name,type,size:data.length,text:await extractFile(name,type,data)});}catch(e){return json(res,415,{error:e.message});}}
     return json(res,404,{error:'API route not found'});
   }
   const file=url.pathname==='/'?'index.html':url.pathname.replace(/^\//,'');if(!PUBLIC.has(file))return json(res,404,{error:'Not found'});const p=path.join(ROOT,file);if(!fs.existsSync(p))return json(res,404,{error:'Not found'});const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[path.extname(p)]||'text/plain; charset=utf-8','Cache-Control':['index.html','sw.js','manifest.json','manifest.webmanifest'].includes(file)?'no-cache':'public, max-age=31536000, immutable'});fs.createReadStream(p).pipe(res);
