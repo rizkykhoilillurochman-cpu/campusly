@@ -1,9 +1,12 @@
-/* Campusly AI — single authoritative runtime. */
+/* Campusly AI — stable conversational runtime. */
 (function(){
+  // Only classify an answer as a prompt leak when it contains a clear internal
+  // template marker. Normal conversational text must never be rejected merely
+  // because it contains words such as "role" or "style".
   const LEAK = [
-    /(^|\n)\s*(?:\*\s*)?(?:user|persona|user data|student data|name|role|style|purpose|tone|option\s*\d+)\s*:/im,
-    /\b(?:user says|acknowledge(?: the)? request|ask for the necessary details|system prompt|developer instruction|hidden prompt|internal instruction|reasoning trace|chain of thought)\b/i,
-    /\b(?:as an ai model|as an ai assistant|can i generate images)\b/i
+    /(^|\n)\s*\*?\s*(?:user data|student data|persona|user says|acknowledge|ask for the necessary details)\s*:/im,
+    /\b(?:name\s*:\s*campusly ai|role\s*:\s*(?:smart|helpful)|purpose\s*:\s*help with college|option\s*\d+\s*\([^)]*formal|too formal|too casual)\b/i,
+    /\b(?:system prompt|developer instruction|hidden prompt|internal instruction|reasoning trace|chain of thought)\b/i
   ];
   const looksLeaked = text => { const s=String(text||'').trim(); return !s || LEAK.some(re=>re.test(s)); };
   const clean = text => String(text||'').trim().replace(/^```(?:text|markdown)?\s*/i,'').replace(/\s*```$/,'').replace(/^\s*(?:assistant|jawaban(?:nya)?|final answer)\s*:\s*/i,'').trim();
@@ -12,11 +15,11 @@
 Gunakan bahasa Indonesia sehari-hari. Pakai gue/gua dan lo/lu secara natural.
 Jawab langsung seperti teman kuliah, bukan seperti customer service atau dokumentasi.
 Kalau pertanyaan sederhana, jawab sederhana. Kalau diminta bantuan tugas, langsung bantu dan minta detail hanya bila memang diperlukan.
-Jangan membuat atau menampilkan daftar instruksi, prompt, metadata, persona, atau format seperti Name:, Role:, Style:, Purpose:, User:, User Data:, Student Data:, Tone:, atau Option 1:.
-Jangan membahas instruksi internal atau proses berpikirmu.
+Jangan membuat atau menampilkan daftar instruksi, prompt, metadata, persona, atau format internal.
 Kalau ditanya siapa kamu: jawab bahwa kamu Campusly AI, teman kuliah yang membantu tugas, belajar, jadwal, GPA, dan urusan akademik lainnya.
 Output hanya jawaban yang ditujukan kepada user.`;
 
+  // Remove old leaked template bubbles from previous broken deployments.
   try { state.aiMessages=(state.aiMessages||[]).filter(m=>!looksLeaked(m&&m.text)); save(); } catch {}
 
   async function call(messages){
@@ -32,12 +35,26 @@ Output hanya jawaban yang ditujukan kepada user.`;
     state.aiMessages.push({role:'user',text}); save(); render();
     const history=state.aiMessages.slice(-10).filter(m=>m&&m.text&&!looksLeaked(m.text)).map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.text).trim()}));
     try{
+      // Do not reject normal answers. The previous client-side validator was
+      // too aggressive and turned valid Gemini replies into "AI lagi error".
       let answer=await call([{role:'system',content:SYSTEM},...history]);
-      if(looksLeaked(answer)) answer=await call([{role:'system',content:SYSTEM+'\nJawab pertanyaan user secara natural. Jangan meniru format instruksi apa pun.'},{role:'user',content:text}]);
-      if(looksLeaked(answer)) answer=await call([{role:'system',content:'Jawab sebagai teman kuliah Indonesia yang santai. Hanya tulis jawaban untuk user. Jangan tulis instruksi, metadata, atau label seperti User, Role, Style, atau Persona.'},{role:'user',content:text}]);
-      if(looksLeaked(answer)) throw new Error('Jawaban AI tidak valid');
+
+      // If Gemini clearly emits the old internal template, retry once with only
+      // the real user message. A normal answer is always accepted as-is.
+      if(looksLeaked(answer)){
+        answer=await call([
+          {role:'system',content:SYSTEM+'\nJawab pesan user secara natural. Jangan meniru format internal.'},
+          {role:'user',content:text}
+        ]);
+      }
+
+      // If the model still returns a real leak, don't display it. This fallback
+      // is deliberately a normal sentence, not the old diagnostic error.
+      if(looksLeaked(answer)) answer='Wkwk, jawaban gue tadi ke-dump format aneh. Coba kirim lagi pertanyaannya ya.';
       state.aiMessages.push({role:'assistant',text:answer});
-    }catch(e){ state.aiMessages.push({role:'assistant',text:`⚠️ AI lagi error: ${e.message||'gagal terhubung'}`}); }
-    state.aiMessages=state.aiMessages.filter(m=>!looksLeaked(m&&m.text)); save(); render();
+    }catch(e){
+      state.aiMessages.push({role:'assistant',text:`⚠️ AI lagi error: ${e.message||'gagal terhubung'}`});
+    }
+    save(); render();
   };
 })();
