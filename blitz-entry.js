@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 
 const PUBLIC_PORT = Number(process.env.PORT || 8787);
 const INTERNAL_PORT = PUBLIC_PORT + 1;
-const MAX_BODY = 64 * 1024;
+const MAX_BODY = 256 * 1024;
 const attempts = new Map();
 
 function json(res, code, body) {
@@ -22,20 +22,24 @@ function allowed(ip) {
   if (now - x.t >= 60000) { x.n = 0; x.t = now; }
   x.n++;
   attempts.set(ip, x);
-  return x.n <= 20;
+  return x.n <= 30;
 }
 
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let body = '';
+    let done = false;
     req.on('data', chunk => {
+      if (done) return;
       body += chunk;
       if (Buffer.byteLength(body) > MAX_BODY) {
+        done = true;
         reject(new Error('Pesan terlalu besar.'));
         req.destroy();
       }
     });
     req.on('end', () => {
+      if (done) return;
       try { resolve(body ? JSON.parse(body) : {}); }
       catch { reject(new Error('JSON tidak valid.')); }
     });
@@ -43,21 +47,16 @@ function readJson(req) {
   });
 }
 
-// Keep the AI model deterministic for the free Gemini API tier.
-// Do not let an old/invalid GEMINI_MODEL environment value break AI.
-function geminiModel() {
-  return 'gemini-3.6-flash';
-}
-
-async function callGemini(messages) {
-  const key = String(process.env.GEMINI_API_KEY || '').trim();
-  if (!key) throw new Error('GEMINI_API_KEY belum diisi di Environment Blitz.');
-
+function geminiPayload(messages) {
   const list = Array.isArray(messages) ? messages : [];
-  const system = list.filter(m => m?.role === 'system')
+  const system = list
+    .filter(m => m?.role === 'system')
     .map(m => String(m?.content ?? ''))
-    .filter(Boolean).join('\n\n');
-  const contents = list.filter(m => m?.role !== 'system')
+    .filter(Boolean)
+    .join('\n\n');
+
+  const contents = list
+    .filter(m => m?.role !== 'system')
     .map(m => ({
       role: m?.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: String(m?.content ?? '') }]
@@ -66,41 +65,68 @@ async function callGemini(messages) {
 
   const payload = {
     contents,
-    generationConfig: { temperature: 0.4 }
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 2048
+    }
   };
   if (system) payload.systemInstruction = { parts: [{ text: system }] };
+  return payload;
+}
+
+async function callGemini(messages) {
+  const key = String(process.env.GEMINI_API_KEY || '').trim();
+  if (!key) throw new Error('GEMINI_API_KEY kosong. Isi GEMINI_API_KEY di Blitz > Environment.');
 
   const models = [
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-2.5-flash'
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-3.6-flash'
   ];
+  const payload = JSON.stringify(geminiPayload(messages));
   let lastError = null;
 
   for (const model of models) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const r = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': key
-      },
-      body: JSON.stringify(payload)
-    });
-    const d = await r.json().catch(() => ({}));
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': key
+        },
+        body: payload,
+        signal: controller.signal
+      });
+      const data = await response.json().catch(() => ({}));
 
-    if (r.ok) {
-      const text = d?.candidates?.[0]?.content?.parts?.map(p => p?.text || '').join('').trim() || '';
-      if (text) return { text, model };
-      lastError = new Error(`Gemini ${model} mengembalikan jawaban kosong.`);
-      continue;
+      if (response.ok) {
+        const text = data?.candidates?.[0]?.content?.parts
+          ?.map(p => p?.text || '')
+          .join('')
+          .trim() || '';
+        if (text) return { text, model };
+        lastError = new Error(`Gemini ${model} memberi jawaban kosong.`);
+        continue;
+      }
+
+      const message = data?.error?.message || `HTTP ${response.status}`;
+      lastError = new Error(`Gemini ${model}: ${message}`);
+
+      // 404 = model/endpoint tidak tersedia, jadi coba model berikutnya.
+      // 400/401/403 = request/key bermasalah; retry model tidak akan membantu.
+      if ([400, 401, 403].includes(response.status)) break;
+    } catch (err) {
+      lastError = new Error(
+        err?.name === 'AbortError'
+          ? `Gemini ${model}: timeout 20 detik.`
+          : `Gemini ${model}: ${err?.message || 'koneksi gagal.'}`
+      );
+    } finally {
+      clearTimeout(timer);
     }
-
-    const message = d?.error?.message || `HTTP ${r.status}`;
-    lastError = new Error(`Gemini ${model}: ${message}`);
-
-    // Authentication/quota errors will not be fixed by another model.
-    if ([400, 401, 403].includes(r.status)) break;
   }
 
   throw lastError || new Error('Gemini gagal dipanggil.');
@@ -109,20 +135,30 @@ async function callGemini(messages) {
 async function ai(req, res) {
   const ip = req.socket.remoteAddress || 'unknown';
   if (!allowed(ip)) return json(res, 429, { error: 'Terlalu banyak permintaan AI. Coba lagi sebentar.' });
+
   try {
     const body = await readJson(req);
     const messages = Array.isArray(body.messages) ? body.messages : [];
     if (!messages.length) return json(res, 400, { error: 'Pesan AI kosong.' });
     const result = await callGemini(messages);
-    return json(res, 200, { text: result.text, provider: 'gemini', model: result.model });
-  } catch (e) {
-    return json(res, 502, { error: e?.message || 'AI gagal dipanggil.' });
+    return json(res, 200, {
+      ok: true,
+      text: result.text,
+      provider: 'gemini',
+      model: result.model
+    });
+  } catch (err) {
+    console.error('[AI]', err?.stack || err?.message || err);
+    return json(res, 502, {
+      ok: false,
+      error: err?.message || 'AI gagal dipanggil.'
+    });
   }
 }
 
 function patchAppJs(body) {
   const source = body.toString('utf8');
-  const replacement = `async function askAI(q){state.aiMessages=state.aiMessages||[];state.aiMessages.push({role:'user',text:q});save();render();try{const token=localStorage.getItem('campusly_token');const headers={'Content-Type':'application/json'};if(token)headers.Authorization=\`Bearer \${token}\`;const r=await fetch('/api/ai',{method:'POST',headers,body:JSON.stringify({messages:[{role:'system',content:aiContext()},{role:'user',content:q}]})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.text)throw new Error(d.error||'AI tidak mengembalikan jawaban.');state.aiMessages.push({role:'assistant',text:d.text});}catch(e){state.aiMessages.push({role:'assistant',text:'AI error: '+(e?.message||'gagal terhubung ke Gemini.')});}save();render()}`;
+  const replacement = `async function askAI(q){const text=String(q||'').trim();if(!text)return;state.aiMessages=state.aiMessages||[];state.aiMessages.push({role:'user',text});save();render();try{const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:aiContext()},{role:'user',content:text}]})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.text)throw new Error(d.error||\`AI gagal (HTTP \${r.status})\`);state.aiMessages.push({role:'assistant',text:d.text});}catch(e){state.aiMessages.push({role:'assistant',text:'⚠️ '+(e?.message||'AI gagal terhubung.')});}save();render()}`;
   const patched = source.replace(/async function askAI\(q\)\{.*?\}\nfunction aiContext/s, replacement + '\nfunction aiContext');
   return patched === source ? source : patched;
 }
@@ -135,13 +171,15 @@ function proxy(req, res) {
     path: req.url,
     headers: { ...req.headers, host: `127.0.0.1:${INTERNAL_PORT}` }
   };
+
   const upstream = http.request(options, response => {
     const chunks = [];
     response.on('data', chunk => chunks.push(chunk));
     response.on('end', () => {
       let body = Buffer.concat(chunks);
       const type = String(response.headers['content-type'] || '');
-      if (req.method === 'GET' && new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname === '/app.js' && type.includes('javascript')) {
+      const pathname = new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname;
+      if (req.method === 'GET' && pathname === '/app.js' && type.includes('javascript')) {
         body = Buffer.from(patchAppJs(body));
         const headers = { ...response.headers, 'content-length': body.length, 'cache-control': 'no-store' };
         delete headers['content-encoding'];
@@ -152,7 +190,10 @@ function proxy(req, res) {
       res.end(body);
     });
   });
-  upstream.on('error', () => json(res, 502, { error: 'Campusly server belum siap.' }));
+  upstream.on('error', err => {
+    console.error('[PROXY]', err?.message || err);
+    json(res, 502, { error: 'Campusly server belum siap.' });
+  });
   req.pipe(upstream);
 }
 
@@ -162,9 +203,8 @@ const child = spawn(process.execPath, ['server.js'], {
 });
 child.stdout.on('data', d => process.stdout.write(d));
 child.stderr.on('data', d => process.stderr.write(d));
-child.on('exit', (code, signal) => {
-  if (!server.listening) process.exit(code || 1);
-  else process.exit(code || 1);
+child.on('exit', code => {
+  if (server.listening) process.exit(code || 1);
 });
 
 const server = http.createServer((req, res) => {
