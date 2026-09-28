@@ -14,7 +14,7 @@ const DB_FILE = path.join(DATA_DIR, 'campusly.sqlite');
 const MAX_JSON = 2 * 1024 * 1024;
 const MAX_FILE = 15 * 1024 * 1024;
 const SESSION_TTL = 7 * 24 * 60 * 60 * 1000;
-const PUBLIC = new Set(['index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest','manifest.json','sw.js','icon.svg','ai-fix.js']);
+const PUBLIC = new Set(['index.html','app.js','styles.css','mobile-menu.css','final-polish.css','final-polish.js','final-state-bridge.js','manifest.webmanifest','manifest.json','sw.js','sw-v30.js','icon.svg','ai-runtime.js','enhancements.js','developer-contact.js','ai-fix.js','non-ai-upgrade.js']);
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_FILE);
@@ -155,7 +155,7 @@ async function route(req,res){
     if(url.pathname==='/api/documents/extract'&&req.method==='POST'){if(!uid)return json(res,401,{error:'Unauthorized'});const name=String(req.headers['x-file-name']||'document'),type=String(req.headers['x-file-type']||'application/octet-stream');const data=await readRaw(req);try{return json(res,200,{name,type,size:data.length,text:await extractFile(name,type,data)});}catch(e){return json(res,415,{error:e.message});}}
     return json(res,404,{error:'API route not found'});
   }
-  const file=url.pathname==='/'?'index.html':url.pathname.replace(/^\//,'');if(!PUBLIC.has(file))return json(res,404,{error:'Not found'});const p=path.join(ROOT,file);if(!fs.existsSync(p))return json(res,404,{error:'Not found'});const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[path.extname(p)]||'text/plain; charset=utf-8','Cache-Control':['index.html','sw.js','manifest.json','manifest.webmanifest'].includes(file)?'no-cache':'public, max-age=31536000, immutable'});fs.createReadStream(p).pipe(res);
+  const file=url.pathname==='/'?'index.html':url.pathname.replace(/^\//,'');if(!PUBLIC.has(file))return json(res,404,{error:'Not found'});const p=path.join(ROOT,file);if(!fs.existsSync(p))return json(res,404,{error:'Not found'});const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml'};res.writeHead(200,{'Content-Type':types[path.extname(p)]||'text/plain; charset=utf-8','Cache-Control':['index.html','sw.js','sw-v30.js','manifest.json','manifest.webmanifest'].includes(file)?'no-cache':'public, max-age=31536000, immutable'});fs.createReadStream(p).pipe(res);
 }
 setInterval(()=>{const now=Date.now();db.prepare('DELETE FROM sessions WHERE expires_at<?').run(now);for(const [k,v] of oauthStates)if(v<now)oauthStates.delete(k);for(const [k,v] of oauthCodes)if(v.expiresAt<now)oauthCodes.delete(k);},15*60*1000).unref();
 const server=http.createServer((req,res)=>route(req,res).catch(e=>{console.error('Unhandled request error:',e);if(!res.headersSent)json(res,e.status||500,{error:'Internal server error'});else res.destroy();}));
