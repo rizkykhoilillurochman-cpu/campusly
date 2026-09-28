@@ -30,14 +30,14 @@
 <script>
 (function(){
   var failed=false;
-  function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid';}
+  function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}
   window.addEventListener('error',function(e){if(e&&e.error)fatal()});
   window.addEventListener('unhandledrejection',function(){fatal()});
-  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=1').catch(function(){})}}catch(e){}
+  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=2').catch(function(){})}}catch(e){}
 })();
 </script>
 <script src="/app.js?v=26"></script>
-<script src="/ai-runtime.js?v=5"></script>
+<script src="/ai-runtime.js?v=6"></script>
 <script src="/enhancements.js?v=1"></script>
 <script src="/developer-contact.js?v=2"></script>
 </body>
