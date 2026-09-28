@@ -29,17 +29,10 @@
 <script>
 (function(){
   'use strict';
-  function clean(){
-    if(window.innerWidth<=760){
-      document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove();});
-    }
-  }
+  function clean(){if(window.innerWidth<=760)document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove();});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();
   window.addEventListener('resize',clean);
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});
-    if(window.caches&&caches.keys)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});
-  }
+  if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(window.caches&&caches.keys)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}
 })();
 </script>
 <script src="/boot-fix.js?v=3"></script>
@@ -49,7 +42,7 @@
 <script src="/mobile-experience.js?v=7"></script>
 <script src="/mobile-force.js?v=3"></script>
 <script src="/mobile-hotfix.js?v=3"></script>
-<script src="/mobile-final.js?v=2"></script>
+<script src="/mobile-final.js?v=3"></script>
 <script src="/mobile-stable.js?v=2"></script>
 </body>
 </html>
