@@ -26,9 +26,12 @@ Phase 9 — release hardening and production packaging
 - Google OAuth authorization-code architecture with state validation and one-time exchange code; requires real Google credentials
 - Server-side AI gateway; frontend never receives provider secrets
 - Security headers, request size limits, rate limiting, expiring sessions
-- PWA manifest, service worker/offline shell, installable icon asset
+- PWA manifest and installable icon metadata
 - Capacitor packaging configuration prepared for Android build
 - Keyboard focus states and prefers-reduced-motion support
+- Mobile menu rebuilt as a dedicated iOS-safe scrolling surface
+- Fatal frontend error screen to avoid silent blank-page failures
+- Automated GitHub Actions CI for Node 22 syntax checks and integration smoke tests
 
 ## Current Task
 Release hardening, production packaging, deployment verification, and external credential verification.
@@ -40,10 +43,12 @@ Release hardening, production packaging, deployment verification, and external c
 - Academic Tools contains several hub-level modules rather than full specialist implementations.
 - Android APK/AAB is not claimed until Android SDK/Capacitor tooling produces a verified release build.
 - Production deployment is not available in this environment, so domain/HTTPS verification cannot be claimed.
+- Full browser interaction QA is still required on real iPhone Safari and Android Chrome.
 
 ## Test Status
 - app.js syntax: PASS
 - server.js syntax: PASS
+- startup.js syntax: PASS
 - SQLite initialization: PASS
 - registration/login/session: PASS
 - authenticated sync GET/PUT: PASS
@@ -52,9 +57,10 @@ Release hardening, production packaging, deployment verification, and external c
 - DOCX extraction: PASS
 - XLSX extraction: PASS
 - TXT extraction: PASS
-- PWA service-worker asset list updated: PASS
+- manifest/shell smoke checks: PASS
 - security headers: implemented and locally served
-- Chromium headless browser run: attempted; environment process timed out before DOM output, so full browser interaction QA remains unverified
+- GitHub Actions CI: configured; latest run must be observed after push
+- Chromium headless browser run: previously attempted; environment process timed out before DOM output, so full browser interaction QA remains unverified
 - OAuth token is no longer placed in the redirect URL; callback issues a short-lived one-time exchange code
 
 ## Files Changed in v1.0.0-rc1
@@ -63,7 +69,6 @@ Release hardening, production packaging, deployment verification, and external c
 - server.js
 - package.json
 - manifest.webmanifest
-- sw.js
 - index.html
 - icon.svg
 - capacitor.config.json
@@ -71,6 +76,9 @@ Release hardening, production packaging, deployment verification, and external c
 - PROJECT_PROGRESS.md
 - QA_CHECKLIST.md
 - ARCHITECTURE.md
+- mobile-menu.css
+- tests/integration.js
+- .github/workflows/ci.yml
 
 ## Database Status
 SQLite WAL database with per-user state, sessions, and automatic legacy JSON migration.
