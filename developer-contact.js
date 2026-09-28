@@ -3,8 +3,7 @@
   const DEV = {
     name: 'Rizky Khoilillu Rochman',
     email: 'rizkykhoilillurochman@gmail.com',
-    instagram: 'therealramanih_',
-    github: 'rizkykhoilillurochman-cpu'
+    instagram: 'therealramanih_'
   };
 
   function developerCard() {
@@ -26,7 +25,6 @@
       <div class="developer-links" style="display:grid;gap:10px">
         <a class="btn" href="mailto:${DEV.email}">✉️ ${DEV.email}</a>
         <a class="btn" href="https://instagram.com/${DEV.instagram}" target="_blank" rel="noopener noreferrer">◎ Instagram · @${DEV.instagram}</a>
-        <a class="btn" href="https://github.com/${DEV.github}" target="_blank" rel="noopener noreferrer">⌘ GitHub · ${DEV.github}</a>
       </div>
       <p class="muted" style="margin:14px 0 0">Kalau nemu bug, punya ide fitur, atau mau ngasih feedback, langsung kontak aja.</p>
     </div>`;
