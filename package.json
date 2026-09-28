@@ -1,11 +1,11 @@
 {
   "name": "campusly",
-  "version": "1.1.0-ai-workbench",
+  "version": "1.1.1-ai-model-refresh",
   "private": true,
   "scripts": {
-    "start": "node server-ai.js",
+    "start": "GEMINI_MODEL=gemini-3.8-flash GEMINI_FALLBACK_MODEL=gemini-3.7-flash node server-ai.js",
     "check": "node --check app.js && node --check server.js && node --check startup.js && node --check blitz-entry.js && node --check server-ai.js && node --check ai-core.js && node --check ai-fix.js",
-    "start:prod": "NODE_ENV=production node server-ai.js",
+    "start:prod": "NODE_ENV=production GEMINI_MODEL=gemini-3.8-flash GEMINI_FALLBACK_MODEL=gemini-3.7-flash node server-ai.js",
     "test": "node tests/integration.js"
   },
   "engines": {
