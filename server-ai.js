@@ -17,11 +17,57 @@ function json(res, code, body){
 }
 function readJson(req){return new Promise((resolve,reject)=>{let body='',done=false;req.on('data',chunk=>{if(done)return;body+=chunk;if(Buffer.byteLength(body)>MAX_BODY){done=true;reject(new Error('Pesan terlalu besar'));req.destroy();}});req.on('end',()=>{if(done)return;try{resolve(body?JSON.parse(body):{});}catch{reject(new Error('JSON tidak valid'));}});req.on('error',reject);});}
 function geminiPayload(messages){const list=Array.isArray(messages)?messages:[];const contents=list.filter(m=>m&&m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'').trim()}]})).filter(m=>m.parts[0].text);return {contents,generationConfig:{temperature:0.7,maxOutputTokens:1024}};}
-async function geminiFetch(url,options={}){const key=String(process.env.GEMINI_API_KEY||'').trim();if(!key)throw new Error('GEMINI_API_KEY kosong');const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);try{return await fetch(url,{...options,headers:{...(options.headers||{}),'x-goog-api-key':key},signal:controller.signal});}finally{clearTimeout(timer);}}
+async function geminiFetch(url,options={}){const key=String(process.env.GEMINI_API_KEY||'').trim();if(!key)throw new Error('GEMINI_API_KEY kosong di Render');const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),12000);try{return await fetch(url,{...options,headers:{...(options.headers||{}),'x-goog-api-key':key},signal:controller.signal});}finally{clearTimeout(timer);}}
 function modelName(){return String(process.env.GEMINI_MODEL||'gemini-2.5-flash-lite').trim().replace(/^models\//,'');}
-async function generate(model,messages){const r=await geminiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(geminiPayload(messages))});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(`${model}: HTTP ${r.status} — ${d?.error?.message||'Gemini error'}`);return d?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join('').trim()||'';}
-async function handleAI(req,res){try{const body=await readJson(req),messages=Array.isArray(body.messages)?body.messages:[];if(!messages.length)return json(res,400,{ok:false,error:'Pesan AI kosong'});const model=modelName(),text=await generate(model,messages);if(!text)return json(res,502,{ok:false,error:'Gemini tidak mengembalikan jawaban'});return json(res,200,{ok:true,text,provider:'gemini',model});}catch(e){console.error('[AI]',e?.stack||e);return json(res,502,{ok:false,error:e?.message||'Gemini gagal'});}}
-async function handleHealth(res){return json(res,200,{ok:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),configured:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),model:modelName()});}
+function fallbackModel(primary){const configured=String(process.env.GEMINI_FALLBACK_MODEL||'gemini-2.5-flash').trim().replace(/^models\//,'');return configured&&configured!==primary?configured:'';}
+async function generate(model,messages){
+  const r=await geminiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(geminiPayload(messages))});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){
+    const detail=d?.error?.message||`HTTP ${r.status}`;
+    const err=new Error(`${model}: ${detail}`);
+    err.status=r.status;
+    throw err;
+  }
+  const text=d?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join('').trim()||'';
+  if(!text){
+    const reason=d?.candidates?.[0]?.finishReason||d?.promptFeedback?.blockReason||'jawaban kosong';
+    const err=new Error(`${model}: ${reason}`);
+    err.status=502;
+    throw err;
+  }
+  return text;
+}
+async function handleAI(req,res){
+  try{
+    const body=await readJson(req),messages=Array.isArray(body.messages)?body.messages:[];
+    if(!messages.length)return json(res,400,{ok:false,error:'Pesan AI kosong'});
+    const primary=modelName();
+    try{
+      const text=await generate(primary,messages);
+      return json(res,200,{ok:true,text,provider:'gemini',model:primary});
+    }catch(first){
+      const fallback=fallbackModel(primary);
+      const canFallback=[404,429,500,502,503,504].includes(Number(first.status));
+      if(fallback&&canFallback){
+        try{
+          const text=await generate(fallback,messages);
+          return json(res,200,{ok:true,text,provider:'gemini',model:fallback,fallback:true});
+        }catch(second){
+          console.error('[AI] primary:',first?.message||first,'fallback:',second?.message||second);
+          return json(res,502,{ok:false,error:`AI gagal. ${second?.message||first?.message||'Coba lagi sebentar.'}`});
+        }
+      }
+      console.error('[AI]',first?.stack||first);
+      const status=Number(first.status);
+      return json(res,502,{ok:false,error:first?.message||'Gemini gagal',provider_status:Number.isFinite(status)?status:null});
+    }
+  }catch(e){
+    console.error('[AI]',e?.stack||e);
+    return json(res,502,{ok:false,error:e?.message||'Gemini gagal'});
+  }
+}
+async function handleHealth(res){return json(res,200,{ok:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),configured:Boolean(String(process.env.GEMINI_API_KEY||'').trim()),model:modelName(),fallbackModel:fallbackModel(modelName())});}
 function serveStatic(req,res){if(req.method!=='GET')return false;const url=new URL(req.url,'http://localhost');const name=url.pathname==='/'?'index.html':decodeURIComponent(url.pathname).replace(/^\//,'');if(!PUBLIC_FILES.has(name))return false;const file=path.join(ROOT,name);try{const stat=fs.statSync(file);if(!stat.isFile())return false;const data=fs.readFileSync(file);res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(data);return true;}catch{return false;}}
 const child=spawn(process.execPath,['server.js'],{env:{...process.env,PORT:String(INTERNAL_PORT)},stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>process.stdout.write(d));child.stderr.on('data',d=>process.stderr.write(d));child.on('exit',code=>{if(server.listening)process.exit(code||1);});
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');if(url.pathname==='/api/ai'&&req.method==='POST')return handleAI(req,res);if(url.pathname==='/api/ai/health'&&req.method==='GET')return handleHealth(res);if(serveStatic(req,res))return;proxy(req,res);}catch(e){json(res,500,{ok:false,error:e?.message||'Internal error'});}});
