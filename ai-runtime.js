@@ -4,6 +4,7 @@
     const r=await fetch('/api/ai',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
+      cache:'no-store',
       body:JSON.stringify({messages})
     });
     const d=await r.json().catch(()=>({}));
@@ -22,17 +23,15 @@
 
     const history=state.aiMessages.slice(-12)
       .filter(m=>m&&m.text)
-      .map(m=>({
-        role:m.role==='assistant'?'assistant':'user',
-        content:String(m.text).trim()
-      }))
+      .map(m=>({role:m.role==='assistant'?'assistant':'user',content:String(m.text).trim()}))
       .filter(m=>m.content);
 
     try{
       const answer=await call(history);
       state.aiMessages.push({role:'assistant',text:answer||'Gue belum dapet jawaban dari AI.'});
     }catch(e){
-      state.aiMessages.push({role:'assistant',text:`⚠️ AI lagi error: ${e.message||'gagal terhubung'}`});
+      const message=String(e?.message||'gagal terhubung');
+      state.aiMessages.push({role:'assistant',text:`⚠️ AI lagi error: ${message}`});
     }
 
     save();
