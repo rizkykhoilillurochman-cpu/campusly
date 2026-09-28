@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050914">
 <meta name="description" content="Campusly — Your College Life, Smarter">
-<link rel="manifest" href="/manifest.json?v=17">
+<link rel="manifest" href="/manifest.json?v=18">
 <link rel="icon" href="/icon.svg">
 <link rel="stylesheet" href="/styles.css?v=12">
 <link rel="stylesheet" href="/polish.css?v=3">
@@ -28,21 +28,19 @@
 <script>
 (function(){
   'use strict';
-  if(window.innerWidth<=760){try{document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove()})}catch(e){}}
-  function mobile(){
-    if(window.innerWidth>760)return;
-    document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove()});
-    var nav=document.querySelector('.mobile-nav'); if(!nav)return;
-    nav.innerHTML='<button data-route="home">⌂<span>Home</span></button><button data-route="tasks">✓<span>Tasks</span></button><button data-route="schedule">◫<span>Jadwal</span></button><button data-route="ai">✧<span>AI</span></button><button data-menu="1">☰<span>Menu</span></button>';
-    var go=function(r){if(typeof window.go==='function')window.go(r);else location.hash='#'+r};
-    var current=location.hash.slice(1)||'home';
-    nav.querySelectorAll('[data-route]').forEach(function(b){b.classList.toggle('active',b.dataset.route===current);b.onclick=function(){go(b.dataset.route)}});
+  // Keep this bootstrap deliberately tiny: no DOM observer and no nav rewriting here.
+  // The previous observer rewrote .mobile-nav on every mutation and could lock the page.
+  function clean(){
+    if(window.innerWidth<=760){
+      document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove();});
+    }
   }
-  function boot(){mobile()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-  new MutationObserver(function(){mobile()}).observe(document.body,{childList:true,subtree:true});
-  window.addEventListener('hashchange',mobile);window.addEventListener('resize',mobile);
-  if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){});if(window.caches&&caches.keys)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}).catch(function(){})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',clean);else clean();
+  window.addEventListener('resize',clean);
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});
+    if(window.caches&&caches.keys)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});
+  }
 })();
 </script>
 <script src="/boot-fix.js?v=2"></script>
@@ -51,6 +49,6 @@
 <script src="/mobile-enhancements.js?v=4"></script>
 <script src="/mobile-experience.js?v=6"></script>
 <script src="/mobile-force.js?v=2"></script>
-<script src="/mobile-hotfix.js?v=1"></script>
+<script src="/mobile-hotfix.js?v=2"></script>
 </body>
 </html>
