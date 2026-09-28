@@ -7,7 +7,7 @@
 <meta name="description" content="Campusly — pusat tugas, jadwal, catatan, GPA, fokus, dan kehidupan kuliah.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-touchscreen" content="yes">
+<meta name="apple-touch-fullscreen" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campusly">
 <link rel="manifest" href="/manifest.webmanifest?v=28">
@@ -33,7 +33,7 @@
   function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid';}
   window.addEventListener('error',function(e){if(e&&e.error)fatal()});
   window.addEventListener('unhandledrejection',function(){fatal()});
-  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=28').catch(function(){})}}catch(e){}
+  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=1').catch(function(){})}}catch(e){}
 })();
 </script>
 <script src="/app.js?v=26"></script>
