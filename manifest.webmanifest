@@ -1,1 +1,15 @@
-{"name":"Campusly","short_name":"Campusly","start_url":"./","display":"standalone","background_color":"#f7f7fb","theme_color":"#111827","lang":"id","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "id":"/",
+  "name":"Campusly — Student Workspace",
+  "short_name":"Campusly",
+  "description":"Pusat tugas, jadwal, catatan, GPA, fokus, dan kehidupan kuliah.",
+  "start_url":"/",
+  "scope":"/",
+  "display":"standalone",
+  "orientation":"portrait-primary",
+  "background_color":"#050914",
+  "theme_color":"#060a18",
+  "lang":"id",
+  "categories":["education","productivity"],
+  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
