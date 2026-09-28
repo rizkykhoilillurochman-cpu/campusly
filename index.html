@@ -28,8 +28,6 @@
 <script>
 (function(){
   'use strict';
-  // Keep this bootstrap deliberately tiny: no DOM observer and no nav rewriting here.
-  // The previous observer rewrote .mobile-nav on every mutation and could lock the page.
   function clean(){
     if(window.innerWidth<=760){
       document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove();});
@@ -50,5 +48,6 @@
 <script src="/mobile-experience.js?v=6"></script>
 <script src="/mobile-force.js?v=2"></script>
 <script src="/mobile-hotfix.js?v=2"></script>
+<script src="/mobile-final.js?v=1"></script>
 </body>
 </html>
