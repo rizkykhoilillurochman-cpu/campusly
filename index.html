@@ -22,6 +22,7 @@
 #fatal-error h1{margin:0 0 8px;font-size:24px}
 #fatal-error p{margin:0 0 18px;color:#aab4d0;line-height:1.5}
 #fatal-error button{border:1px solid rgba(255,255,255,.2);border-radius:13px;padding:11px 16px;background:linear-gradient(135deg,#596cff,#a166ff);color:#fff;font-weight:700}
+.ai-card .bubble p{margin:0 0 10px}.ai-card .bubble p:last-child{margin-bottom:0}.ai-card .bubble h2,.ai-card .bubble h3,.ai-card .bubble h4{margin:0 0 10px}.ai-card .bubble ul{margin:0 0 10px;padding-left:22px}.ai-card .bubble pre{overflow:auto;padding:12px;border-radius:12px;background:rgba(0,0,0,.25)}
 </style>
 </head>
 <body>
@@ -33,13 +34,13 @@
   function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}
   window.addEventListener('error',function(e){if(e&&e.error)fatal()});
   window.addEventListener('unhandledrejection',function(){fatal()});
-  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=4').catch(function(){})}}catch(e){}
+  try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=5').catch(function(){})}}catch(e){}
 })();
 </script>
-<script src="/app.js?v=27"></script>
-<script src="/ai-runtime.js?v=7"></script>
-<script src="/enhancements.js?v=2"></script>
-<script src="/developer-contact.js?v=2"></script>
-<script src="/ai-fix.js?v=1"></script>
+<script src="/app.js?v=28"></script>
+<script src="/ai-runtime.js?v=8"></script>
+<script src="/enhancements.js?v=3"></script>
+<script src="/developer-contact.js?v=3"></script>
+<script src="/ai-fix.js?v=2"></script>
 </body>
 </html>
