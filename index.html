@@ -4,25 +4,40 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060a18">
-<meta name="description" content="Campusly — Your College Life, Smarter">
-<link rel="manifest" href="/manifest.json?v=21">
-<link rel="icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles.css?v=21">
-<link rel="stylesheet" href="/mobile-menu.css?v=1">
-<title>Campusly</title>
+<meta name="description" content="Campusly — pusat tugas, jadwal, catatan, GPA, fokus, dan kehidupan kuliah.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Campusly">
+<link rel="manifest" href="/manifest.webmanifest?v=22">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="stylesheet" href="/styles.css?v=22">
+<link rel="stylesheet" href="/mobile-menu.css?v=2">
+<title>Campusly — Student Workspace</title>
+<style>
+#fatal-error{display:none;position:fixed;inset:0;z-index:9999;place-items:center;padding:24px;background:#050914;color:#f7f8ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center}
+#fatal-error .box{width:min(420px,100%);padding:28px;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:rgba(16,24,50,.96);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+#fatal-error h1{margin:0 0 8px;font-size:24px}
+#fatal-error p{margin:0 0 18px;color:#aab4d0;line-height:1.5}
+#fatal-error button{border:1px solid rgba(255,255,255,.2);border-radius:13px;padding:11px 16px;background:linear-gradient(135deg,#596cff,#a166ff);color:#fff;font-weight:700}
+</style>
 </head>
 <body>
 <div id="app"></div>
+<div id="fatal-error" role="alert" aria-live="assertive"><div class="box"><h1>Campusly perlu dimuat ulang</h1><p>Ada masalah saat memuat halaman. Data lokal kamu tetap aman.</p><button type="button" onclick="location.reload()">Muat ulang</button></div></div>
 <script>
 (function(){
+  var failed=false;
+  function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid';}
+  window.addEventListener('error',function(e){if(e&&e.error)fatal()});
+  window.addEventListener('unhandledrejection',function(){fatal()});
   try{
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){});
-    }
+    if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){})}
     if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}).catch(function(){})}
   }catch(e){}
 })();
 </script>
-<script src="/app.js?v=21"></script>
+<script src="/app.js?v=22"></script>
 </body>
 </html>
