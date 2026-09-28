@@ -7,7 +7,7 @@ const ROOT = __dirname;
 const PUBLIC_PORT = Number(process.env.PORT || 8787);
 const INTERNAL_PORT = PUBLIC_PORT + 1;
 const MAX_BODY = 512 * 1024;
-const PUBLIC_FILES = new Set(['index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest','manifest.json','sw.js','icon.svg','ai-runtime.js','developer-contact.js']);
+const PUBLIC_FILES = new Set(['index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest','manifest.json','sw.js','icon.svg','ai-runtime.js','enhancements.js','developer-contact.js']);
 const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.svg':'image/svg+xml'};
 
 function json(res, code, body){
