@@ -43,8 +43,10 @@ function readJson(req) {
   });
 }
 
+// Keep the AI model deterministic for the free Gemini API tier.
+// Do not let an old/invalid GEMINI_MODEL environment value break AI.
 function geminiModel() {
-  return String(process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim().replace(/^models\//, '');
+  return 'gemini-3.6-flash';
 }
 
 async function callGemini(messages) {
@@ -68,21 +70,40 @@ async function callGemini(messages) {
   };
   if (system) payload.systemInstruction = { parts: [{ text: system }] };
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel())}:generateContent`;
-  const r = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': key
-    },
-    body: JSON.stringify(payload)
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d?.error?.message || `Gemini HTTP ${r.status}`);
+  const models = [
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-2.5-flash'
+  ];
+  let lastError = null;
 
-  const text = d?.candidates?.[0]?.content?.parts?.map(p => p?.text || '').join('').trim() || '';
-  if (!text) throw new Error('Gemini mengembalikan jawaban kosong.');
-  return text;
+  for (const model of models) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key
+      },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json().catch(() => ({}));
+
+    if (r.ok) {
+      const text = d?.candidates?.[0]?.content?.parts?.map(p => p?.text || '').join('').trim() || '';
+      if (text) return { text, model };
+      lastError = new Error(`Gemini ${model} mengembalikan jawaban kosong.`);
+      continue;
+    }
+
+    const message = d?.error?.message || `HTTP ${r.status}`;
+    lastError = new Error(`Gemini ${model}: ${message}`);
+
+    // Authentication/quota errors will not be fixed by another model.
+    if ([400, 401, 403].includes(r.status)) break;
+  }
+
+  throw lastError || new Error('Gemini gagal dipanggil.');
 }
 
 async function ai(req, res) {
@@ -92,8 +113,8 @@ async function ai(req, res) {
     const body = await readJson(req);
     const messages = Array.isArray(body.messages) ? body.messages : [];
     if (!messages.length) return json(res, 400, { error: 'Pesan AI kosong.' });
-    const text = await callGemini(messages);
-    return json(res, 200, { text, provider: 'gemini', model: geminiModel() });
+    const result = await callGemini(messages);
+    return json(res, 200, { text: result.text, provider: 'gemini', model: result.model });
   } catch (e) {
     return json(res, 502, { error: e?.message || 'AI gagal dipanggil.' });
   }
