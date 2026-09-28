@@ -9,7 +9,7 @@ const INTERNAL_PORT = PUBLIC_PORT + 1;
 const MAX_BODY = 512 * 1024;
 const PUBLIC_FILES = new Set([
   'index.html','app.js','styles.css','mobile-menu.css','manifest.webmanifest',
-  'manifest.json','sw.js','icon.svg','ai-fix.js'
+  'manifest.json','sw.js','icon.svg','ai-fix.js','ai-runtime.js','developer-contact.js'
 ]);
 const MIME = {
   '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
@@ -165,15 +165,10 @@ function serveStatic(req, res) {
   try {
     const stat = fs.statSync(file);
     if (!stat.isFile()) return false;
-    let data = fs.readFileSync(file);
-    if (name === 'app.js') {
-      const source = data.toString('utf8');
-      const bridge = `async function askAI(q){const text=String(q||'').trim();if(!text)return;state.aiMessages=state.aiMessages||[];state.aiMessages.push({role:'user',text});save();render();try{const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:aiContext()},{role:'user',content:text}]})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.text)throw new Error(d.error||\`AI gagal (HTTP \${r.status})\`);state.aiMessages.push({role:'assistant',text:d.text})}catch(e){state.aiMessages.push({role:'assistant',text:'⚠️ '+(e?.message||'AI gagal terhubung')})}save();render()}`;
-      data = Buffer.from(source.replace(/async function askAI\(q\)\{.*?\}\s*function aiContext/s, bridge + '\nfunction aiContext'));
-    }
+    const data = fs.readFileSync(file);
     res.writeHead(200, {
       'Content-Type':MIME[path.extname(file)] || 'application/octet-stream',
-      'Cache-Control':name === 'index.html' ? 'no-store' : 'no-cache'
+      'Cache-Control':'no-store'
     });
     res.end(data);
     return true;
