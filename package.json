@@ -1,11 +1,11 @@
 {
   "name": "campusly",
-  "version": "2.0.0-canonical-ai",
+  "version": "2.0.1-canonical-ai",
   "private": true,
   "scripts": {
-    "start": "node campusly-server.js",
-    "start:prod": "NODE_ENV=production node campusly-server.js",
-    "check": "node --check app.js && node --check server.js && node --check campusly-server.js && node --check ai-runtime.js && node --check enhancements.js",
+    "start": "node campusly-launcher.js",
+    "start:prod": "NODE_ENV=production node campusly-launcher.js",
+    "check": "node --check app.js && node --check server.js && node --check campusly-server.js && node --check campusly-launcher.js && node --check ai-runtime.js && node --check enhancements.js",
     "test": "node tests/integration.js"
   },
   "engines": {
