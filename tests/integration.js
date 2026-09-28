@@ -16,7 +16,8 @@ function req(method,p,body,token){return new Promise((resolve,reject)=>{const b=
   r=await req('GET','/mobile-menu.css?v=5'); if(r.status!==200||!String(r.body).includes('overflow-y'))throw Error('mobile menu css');
   r=await req('GET','/final-polish.css?v=1'); if(r.status!==200||!String(r.body).includes('cp-modal'))throw Error('final polish css');
   r=await req('GET','/final-polish.js?v=1'); if(r.status!==200||!String(r.body).includes('cpRenderTasks'))throw Error('final polish js');
-  r=await req('GET','/sw.js?v=35'); if(r.status!==200||!String(r.body).includes('campusly-v35'))throw Error('service worker');
+  r=await req('GET','/final-state-bridge.js?v=1'); if(r.status!==200||!String(r.body).includes('window.state=state'))throw Error('state bridge');
+  r=await req('GET','/sw.js?v=36'); if(r.status!==200||!String(r.body).includes('campusly-v36'))throw Error('service worker');
   r=await req('GET','/ai-fix.js?v=5'); if(r.status!==200||!String(r.body).includes('scanAI'))throw Error('ai fix');
   r=await req('GET','/app.js?v=31'); if(r.status!==200||!String(r.body).includes('const KEY'))throw Error('app');
   r=await req('GET','/api/health'); if(r.status!==200||!r.body.ok)throw Error('health');
