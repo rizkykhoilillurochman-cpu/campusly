@@ -43,6 +43,85 @@ http.ServerResponse.prototype.writeHead = function (statusCode, statusMessage, h
     : originalWriteHead.call(this, statusCode, statusMessage, headers);
 };
 
+// Gemini bridge: keep the existing authenticated /api/ai route, but translate
+// its OpenAI-compatible request into Gemini GenerateContent. This keeps the
+// API key server-side and lets Campusly use Gemini's Free Tier without exposing
+// a provider key in the browser.
+const nativeFetch = globalThis.fetch;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+function geminiResponse(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8' }
+  });
+}
+function openAiMessagesToGemini(messages) {
+  const list = Array.isArray(messages) ? messages : [];
+  const system = list.filter(m => m && m.role === 'system').map(m => String(m.content || '')).join('\n\n').trim();
+  const contents = list
+    .filter(m => m && m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(m.content || '') }]
+    }));
+  return { system, contents };
+}
+globalThis.fetch = async function (input, init = {}) {
+  const url = typeof input === 'string' ? input : input?.url || '';
+  if (!String(url).startsWith('https://api.openai.com/v1/chat/completions')) {
+    return nativeFetch(input, init);
+  }
+
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    return geminiResponse(503, {
+      error: 'Gemini AI belum dikonfigurasi di server. Tambahkan GEMINI_API_KEY.'
+    });
+  }
+
+  try {
+    const raw = init.body ? JSON.parse(String(init.body)) : {};
+    const converted = openAiMessagesToGemini(raw.messages);
+    if (!converted.contents.length) {
+      return geminiResponse(400, { error: 'Pesan AI kosong.' });
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(key)}`;
+    const result = await nativeFetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...(converted.system ? { systemInstruction: { parts: [{ text: converted.system }] } } : {}),
+        contents: converted.contents,
+        generationConfig: {
+          temperature: typeof raw.temperature === 'number' ? raw.temperature : 0.4,
+          maxOutputTokens: Number(raw.max_tokens || 2048)
+        }
+      })
+    });
+
+    const data = await result.json();
+    if (!result.ok) {
+      console.error('Gemini API error:', result.status, data?.error?.message || data);
+      return geminiResponse(result.status, {
+        error: data?.error?.message || 'Gemini gagal merespons.'
+      });
+    }
+
+    const text = (data.candidates?.[0]?.content?.parts || [])
+      .map(part => part.text || '')
+      .join('')
+      .trim();
+
+    return geminiResponse(200, {
+      choices: [{ message: { role: 'assistant', content: text } }]
+    });
+  } catch (error) {
+    console.error('Gemini bridge error:', error);
+    return geminiResponse(502, { error: 'Gagal menghubungi Gemini.' });
+  }
+};
+
 // server.js omits manifest.json from its PUBLIC allow-list even though the
 // frontend requests it. Serve manifest.json and favicon.ico here.
 const originalCreateServer = http.createServer;
