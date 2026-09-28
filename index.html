@@ -10,11 +10,11 @@
 <meta name="apple-touch-fullscreen" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campusly">
-<link rel="manifest" href="/manifest.webmanifest?v=31">
+<link rel="manifest" href="/manifest.webmanifest?v=32">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles.css?v=24">
-<link rel="stylesheet" href="/mobile-menu.css?v=4">
+<link rel="stylesheet" href="/styles.css?v=25">
+<link rel="stylesheet" href="/mobile-menu.css?v=5">
 <title>Campusly — Student Workspace</title>
 <style>
 #fatal-error{display:none;position:fixed;inset:0;z-index:9999;place-items:center;padding:24px;background:#050914;color:#f7f8ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center}
@@ -26,12 +26,13 @@
 <div id="app"></div>
 <div id="fatal-error" role="alert" aria-live="assertive"><div class="box"><h1>Campusly perlu dimuat ulang</h1><p>Ada masalah saat memuat halaman. Data lokal kamu tetap aman.</p><button type="button" onclick="location.reload()">Muat ulang</button></div></div>
 <script>
-(function(){var failed=false;function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}window.addEventListener('error',function(e){if(e&&e.error)fatal()});window.addEventListener('unhandledrejection',function(){fatal()});try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v29.js?v=7').catch(function(){})}}catch(e){}})();
+(function(){var failed=false;function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}window.addEventListener('error',function(e){if(e&&e.error)fatal()});window.addEventListener('unhandledrejection',function(){fatal()});try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v30.js?v=8').catch(function(){})}}catch(e){}})();
 </script>
-<script src="/app.js?v=29"></script>
-<script src="/ai-runtime.js?v=9"></script>
-<script src="/enhancements.js?v=4"></script>
-<script src="/developer-contact.js?v=4"></script>
-<script src="/ai-fix.js?v=4"></script>
+<script src="/app.js?v=30"></script>
+<script src="/ai-runtime.js?v=10"></script>
+<script src="/enhancements.js?v=5"></script>
+<script src="/non-ai-upgrade.js?v=1"></script>
+<script src="/developer-contact.js?v=5"></script>
+<script src="/ai-fix.js?v=5"></script>
 </body>
 </html>
