@@ -1,10 +1,10 @@
 # Campusly Project Progress
 
 ## Project Status
-PHASE 9 — release hardening and production packaging
+PHASE 10 — AI academic workbench + production hardening
 
 ## Current Phase
-Phase 9 — release hardening and production packaging
+Phase 10 — stabilize Campusly AI first, then ship scan-to-solve, academic document generation, exports, image generation, and final mobile QA.
 
 ## Completed Features
 - Responsive application shell with desktop sidebar and mobile bottom navigation
@@ -32,23 +32,43 @@ Phase 9 — release hardening and production packaging
 - Mobile menu rebuilt as a dedicated iOS-safe scrolling surface
 - Fatal frontend error screen to avoid silent blank-page failures
 - Automated GitHub Actions CI for Node 22 syntax checks and integration smoke tests
+- AI gateway rebuilt around GEMINI_MODEL with a controlled fallback instead of hardcoded experimental model names
+- AI context now receives real Campusly profile, tasks, schedule, GPA, and courses from the browser
+- AI no longer falls back to hardcoded canned replies when no login token exists
+- AI retry/error state added to the mobile chat
+- Scan-soal endpoint added for image questions using Gemini multimodal input
+- Image-generation endpoint added using a Gemini image model
+- PDF export endpoint added for AI-generated text
+- PPTX export endpoint added for AI-generated text
+- New AI workspace actions: scan soal, makalah help, study plan, GPA analysis, PDF, PPT, image generation, clear chat
+- Service-worker cache bumped so the new AI frontend is actually picked up on mobile
 
 ## Current Task
-Release hardening, production packaging, deployment verification, and external credential verification.
+1. Verify the new AI gateway on production with the real GEMINI_API_KEY/GEMINI_MODEL environment.
+2. Verify scan-to-solve with real iPhone camera/photo input.
+3. Verify PDF and PPTX files open correctly on iPhone/Android/desktop.
+4. Verify image generation availability/quota for the configured Gemini account.
+5. Add richer academic document workflows: makalah template, citation/reference helper, and document-to-AI upload.
+6. Harden cloud persistence on the free deployment target.
+7. Finish full mobile QA without regressing Tasks or Calendar.
 
 ## Known Blockers / Limitations
+- Production AI behavior still depends on the configured Gemini credentials/quota in the deployment environment.
 - Google OAuth requires a Google Cloud OAuth Web Client and production redirect URI.
-- OpenAI requires server-side OPENAI_API_KEY.
 - Background push reminders require HTTPS + push service and are not claimed complete.
 - Academic Tools contains several hub-level modules rather than full specialist implementations.
 - Android APK/AAB is not claimed until Android SDK/Capacitor tooling produces a verified release build.
-- Production deployment is not available in this environment, so domain/HTTPS verification cannot be claimed.
+- The generated PDF writer intentionally uses a simple Helvetica text layout; richer academic typography and embedded images are a later enhancement.
+- PPTX generation is intentionally lightweight; polished themes, charts, and embedded images are a later enhancement.
 - Full browser interaction QA is still required on real iPhone Safari and Android Chrome.
 
 ## Test Status
 - app.js syntax: PASS
 - server.js syntax: PASS
 - startup.js syntax: PASS
+- blitz-entry.js syntax: PASS
+- server-ai.js syntax: PASS
+- ai-core.js syntax: PASS
 - SQLite initialization: PASS
 - registration/login/session: PASS
 - authenticated sync GET/PUT: PASS
@@ -63,31 +83,10 @@ Release hardening, production packaging, deployment verification, and external c
 - Chromium headless browser run: previously attempted; environment process timed out before DOM output, so full browser interaction QA remains unverified
 - OAuth token is no longer placed in the redirect URL; callback issues a short-lived one-time exchange code
 
-## Files Changed in v1.0.0-rc1
-- app.js
-- styles.css
-- server.js
-- package.json
-- manifest.webmanifest
-- index.html
-- icon.svg
-- capacitor.config.json
-- README.md
-- PROJECT_PROGRESS.md
-- QA_CHECKLIST.md
-- ARCHITECTURE.md
-- mobile-menu.css
-- tests/integration.js
-- .github/workflows/ci.yml
+## AI Architecture
+Browser -> `/api/ai*` -> server-side Gemini gateway -> Gemini API.
 
-## Database Status
-SQLite WAL database with per-user state, sessions, and automatic legacy JSON migration.
-
-## AUTH Status
-Email/password complete locally. Google OAuth flow implemented but awaits real credentials and HTTPS callback verification.
-
-## AI Status
-Secure `/api/ai` gateway complete; provider availability depends on server configuration.
+The browser never receives the Gemini API key. AI context is sent as ordinary application data, while system instructions stay server-side. Chat has a controlled provider fallback only for transient/provider/model errors; there is no canned answer fallback.
 
 ## Deployment Status
-Not deployed; deployment credentials/domain are external blockers.
+Deployment is external. After each AI change, verify the live `campusly.blitz.cloud` build and hard-refresh/update the PWA cache before judging the result.
