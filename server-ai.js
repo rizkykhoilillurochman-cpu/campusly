@@ -21,11 +21,11 @@ function chooseModels(available){const configured=String(process.env.GEMINI_MODE
 async function generateOnce(model,messages){const r=await geminiFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(messages))});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(`${model}: HTTP ${r.status} — ${d?.error?.message||'Gemini error'}`);return d?.candidates?.[0]?.content?.parts?.map(p=>p?.text||'').join('').trim()||'';}
 async function askGemini(messages){const available=await availableModels();const candidates=chooseModels(available);if(!candidates.length)throw new Error('Tidak ada model Gemini yang mendukung generateContent untuk API key ini.');let last='';
   for(const model of candidates){
-    for(let attempt=0;attempt<3;attempt++){
+    for(let attempt=0;attempt<2;attempt++){
       try{
         const answer=await generateOnce(model,messages);
         if(answer&&!isLeak(answer))return{text:answer,model};
-        last=`${model}: provider mengembalikan format internal, retry ${attempt+1}/3`;
+        last=`${model}: provider mengembalikan format internal, retry ${attempt+1}/1`;
       }catch(e){last=e?.message||'Gemini gagal';break;}
     }
   }
