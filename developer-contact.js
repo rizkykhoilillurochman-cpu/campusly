@@ -32,7 +32,6 @@
     </div>`;
   }
 
-  // Replace the existing Settings view without touching the rest of the app.
   window.settings = function () {
     const p = state.profile;
     return `${header('ACCOUNT','Settings','Profil, target akademik, data lokal, dan info developer.')}
@@ -59,7 +58,13 @@
       </div>`;
   };
 
-  // app.js calls render() once before this file loads, so render again after
-  // replacing the Settings view. Existing state and all other routes stay intact.
+  // Make the developer/contact info visible from the mobile Menu too.
+  window.menu = function () {
+    return `${header('NAVIGATION','Menu','Semua fitur tetap tersedia di HP—tidak ada fitur yang disembunyikan.')}
+      <div class="menu-sheet">${FEATURES.filter(x=>!['home','tasks','schedule','ai'].includes(x[0])).map(([r,l,d])=>`<button class="menu-item" onclick="go('${r}')"><b>${ICON[r]} ${l}</b><span>${d}</span></button>`).join('')}</div>
+      ${developerCard()}`;
+  };
+
+  // app.js renders once before this file loads; render again after the overrides.
   if (typeof window.render === 'function') window.render();
 })();
