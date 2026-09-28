@@ -11,3 +11,7 @@ services:
         value: production
       - key: DATA_DIR
         value: /tmp/campusly-data
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_FALLBACK_MODEL
+        value: gemini-3.6-flash
