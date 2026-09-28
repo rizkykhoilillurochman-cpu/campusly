@@ -44,7 +44,7 @@ function readJson(req) {
 }
 
 function geminiModel() {
-  return String(process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite').trim().replace(/^models\//, '');
+  return String(process.env.GEMINI_MODEL || 'gemini-3.6-flash').trim().replace(/^models\//, '');
 }
 
 async function callGemini(messages) {
@@ -68,10 +68,13 @@ async function callGemini(messages) {
   };
   if (system) payload.systemInstruction = { parts: [{ text: system }] };
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel())}:generateContent?key=${encodeURIComponent(key)}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel())}:generateContent`;
   const r = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': key
+    },
     body: JSON.stringify(payload)
   });
   const d = await r.json().catch(() => ({}));
