@@ -28,36 +28,20 @@
 <script>
 (function(){
   'use strict';
-  /* Emergency mobile layer: deliberately inline so it cannot be blocked by a stale JS asset. */
-  if(window.innerWidth<=760){
-    try{document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove()})}catch(e){}
-  }
+  if(window.innerWidth<=760){try{document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove()})}catch(e){}}
   function mobile(){
     if(window.innerWidth>760)return;
     document.querySelectorAll('.cmd,.search .cmd').forEach(function(x){x.remove()});
-    var nav=document.querySelector('.mobile-nav');
-    if(!nav)return;
+    var nav=document.querySelector('.mobile-nav'); if(!nav)return;
     nav.innerHTML='<button data-route="home">⌂<span>Home</span></button><button data-route="tasks">✓<span>Tasks</span></button><button data-route="schedule">◫<span>Jadwal</span></button><button data-route="ai">✧<span>AI</span></button><button data-menu="1">☰<span>Menu</span></button>';
     var go=function(r){if(typeof window.go==='function')window.go(r);else location.hash='#'+r};
     var current=location.hash.slice(1)||'home';
     nav.querySelectorAll('[data-route]').forEach(function(b){b.classList.toggle('active',b.dataset.route===current);b.onclick=function(){go(b.dataset.route)}});
-    var menu=nav.querySelector('[data-menu]');
-    if(menu)menu.onclick=function(){
-      var existing=document.getElementById('cx-emergency-menu');
-      if(existing){existing.remove();return}
-      var routes=[['notes','Notes','Catatan'],['calendar','Calendar','Agenda'],['semester','Semester','KRS & mata kuliah'],['gpa','GPA','IPK'],['finance','Finance','Keuangan'],['focus','Focus','Pomodoro'],['analytics','Analytics','Progress'],['thesis','Thesis','Proyek akhir'],['documents','Documents','File kuliah'],['tools','Academic Tools','Tools akademik'],['notifications','Notifications','Notifikasi'],['reminders','Reminders','Pengingat'],['settings','Settings','Pengaturan']];
-      var m=document.createElement('div');m.id='cx-emergency-menu';m.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:18px;box-sizing:border-box';
-      var s=document.createElement('section');s.style.cssText='position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-height:82dvh;overflow:auto;padding:18px;border-radius:28px;background:#080d1e;border:1px solid rgba(255,255,255,.16);color:white';
-      s.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><div><small style="color:#9297ff;letter-spacing:.16em">CAMPUSLY</small><h2 style="margin:5px 0">Semua fitur</h2></div><button id="cx-close" style="width:40px;height:40px;border-radius:50%;background:#171d31;color:white;border:1px solid #ffffff33;font-size:22px">×</button></div><div id="cx-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:9px"></div>';
-      m.appendChild(s);document.body.appendChild(m);m.onclick=function(e){if(e.target===m)m.remove()};s.querySelector('#cx-close').onclick=function(){m.remove()};
-      var grid=s.querySelector('#cx-grid');routes.forEach(function(x){var b=document.createElement('button');b.style.cssText='text-align:left;padding:13px;border-radius:17px;border:1px solid #ffffff18;background:#ffffff0b;color:white';b.innerHTML='<b>'+x[1]+'</b><br><small style="color:#ffffff88">'+x[2]+'</small>';b.onclick=function(){m.remove();go(x[0])};grid.appendChild(b)})
-    };
   }
   function boot(){mobile()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   new MutationObserver(function(){mobile()}).observe(document.body,{childList:true,subtree:true});
   window.addEventListener('hashchange',mobile);window.addEventListener('resize',mobile);
-  /* Kill the old PWA cache once. The app is currently served network-first while mobile is stabilized. */
   if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){});if(window.caches&&caches.keys)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k)})}).catch(function(){})}
 })();
 </script>
@@ -67,5 +51,6 @@
 <script src="/mobile-enhancements.js?v=4"></script>
 <script src="/mobile-experience.js?v=6"></script>
 <script src="/mobile-force.js?v=2"></script>
+<script src="/mobile-hotfix.js?v=1"></script>
 </body>
 </html>
