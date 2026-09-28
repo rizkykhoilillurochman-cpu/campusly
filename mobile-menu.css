@@ -1,5 +1,7 @@
-/* Mobile menu: make the feature sheet a real scroll surface on iOS Safari. */
+/* Mobile menu: real scroll surface + iOS safe-area handling. */
 @media (max-width: 700px) {
+  body:has(.overlay) { overflow: hidden; }
+
   .overlay {
     align-items: flex-start !important;
     justify-items: stretch;
@@ -7,7 +9,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
-    padding: calc(12px + env(safe-area-inset-top)) 10px calc(110px + env(safe-area-inset-bottom)) !important;
+    padding: calc(12px + env(safe-area-inset-top)) 10px calc(128px + env(safe-area-inset-bottom)) !important;
   }
 
   .overlay .modal {
@@ -25,5 +27,16 @@
 
   .overlay .menu-item {
     min-height: 82px;
+    touch-action: manipulation;
   }
+
+  .overlay button:focus-visible,
+  .mobile-nav button:focus-visible {
+    outline: 3px solid rgba(137,149,255,.9);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay { scroll-behavior: auto; }
 }
