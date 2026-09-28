@@ -1,8 +1,0 @@
-/* Sidebar seam fix: keep the sidebar completely independent from the main column/topbar stacking context. */
-.sidebar{position:fixed!important;inset:0 auto 0 0!important;width:260px!important;height:100dvh!important;min-height:100vh!important;margin:0!important;padding:24px 16px!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;background:#071027!important;background-image:none!important;border:0!important;border-right:1px solid rgba(255,255,255,.14)!important;border-radius:0!important;box-shadow:24px 0 80px rgba(0,0,0,.28)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;z-index:100!important;isolation:isolate!important}
-.sidebar::before{content:""!important;position:absolute!important;inset:0!important;z-index:-1!important;pointer-events:none!important;background:radial-gradient(circle at 15% 4%,rgba(92,112,255,.14),transparent 34%),linear-gradient(180deg,#0b1738 0%,#09132e 48%,#061027 100%)!important}
-.sidebar::after{content:""!important;position:absolute!important;inset:0!important;z-index:-1!important;pointer-events:none!important;border-right:1px solid rgba(255,255,255,.08)!important;background:linear-gradient(90deg,rgba(255,255,255,.025),transparent 55%)!important}
-.sidebar>*{position:relative!important;z-index:1!important}
-.main{margin-left:260px!important;min-width:0!important}
-.cmd{display:none!important}
-@media(max-width:900px){.sidebar{width:min(86vw,300px)!important}.main{margin-left:0!important}}
