@@ -1,0 +1,15 @@
+name: _diag
+on: push
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: inspect
+        run: |
+          echo '--- modal/FormData ---'
+          grep -nE 'function modal|FormData|modal-body' campusly-v5.js | head -80 || true
+          echo '--- routes/tools ---'
+          grep -nE "scheduleModal|function schedule|function tools|translator|gradeCalc|convert\(" campusly-v5.js | head -120 || true
+          echo '--- files ---'
+          wc -c campusly-v5.js
