@@ -8,20 +8,43 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-touch-fullscreen" content="yes">
-<link rel="manifest" href="/manifest.webmanifest?v=51">
+<link rel="manifest" href="/manifest.webmanifest?v=52">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles-v2.css?v=51">
+<link rel="stylesheet" href="/styles.css?v=52">
 <title>Campusly — Student Workspace</title>
 </head>
 <body>
 <div id="app"></div>
 <div id="boot-error" hidden></div>
 <script>
-/* Compatibility for the lightweight runtime: its modal shell is a div, so collect named controls safely. */
-(()=>{const NativeFormData=window.FormData;window.FormData=function(el){if(el&&el.querySelectorAll&&!(el instanceof HTMLFormElement)){const fd=new NativeFormData();el.querySelectorAll('input[name],select[name],textarea[name]').forEach(e=>{if(e.type==='checkbox'&&!e.checked)return;fd.append(e.name,e.value)});return fd}return new NativeFormData(el)};window.FormData.prototype=NativeFormData.prototype})();
-window.addEventListener('error',e=>{if(!e.error)return;const x=document.getElementById('boot-error');if(x){x.hidden=false;x.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui"><div><h1>Campusly belum berhasil dimuat</h1><p>'+String(e.error.message||e.error)+'</p><button onclick="location.reload()">Muat ulang</button></div></div>'}});
-const s=document.createElement('script');s.src='/app-v2.js?v=51';s.onerror=()=>{const x=document.getElementById('boot-error');x.hidden=false;x.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui"><div><h1>Campusly belum berhasil dimuat</h1><p>Runtime aplikasi tidak dapat dimuat.</p><button onclick="location.reload()">Muat ulang</button></div></div>'};document.head.appendChild(s);
+(()=>{
+  const NativeFormData=window.FormData;
+  window.FormData=function(el){
+    if(el&&el.querySelectorAll&&!(el instanceof HTMLFormElement)){
+      const fd=new NativeFormData();
+      el.querySelectorAll('input[name],select[name],textarea[name]').forEach(e=>{
+        if(e.type==='checkbox'&&!e.checked)return;
+        fd.append(e.name,e.value);
+      });
+      return fd;
+    }
+    return new NativeFormData(el);
+  };
+  window.FormData.prototype=NativeFormData.prototype;
+  const showBootError=(msg)=>{
+    const x=document.getElementById('boot-error');
+    if(!x)return;
+    x.hidden=false;
+    x.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui"><div><h1>Campusly belum berhasil dimuat</h1><p>'+String(msg||'Runtime aplikasi tidak dapat dimuat.')+'</p><button onclick="location.reload()">Muat ulang</button></div></div>';
+  };
+  window.addEventListener('error',e=>{ if(e.error) showBootError(e.error.message||e.error); });
+  window.addEventListener('unhandledrejection',e=>showBootError(e.reason?.message||e.reason||'Runtime aplikasi mengalami error.'));
+  const s=document.createElement('script');
+  s.src='/app.js?v=52';
+  s.onerror=()=>showBootError('Runtime aplikasi tidak dapat dimuat dari server.');
+  document.head.appendChild(s);
+})();
 </script>
 </body>
 </html>
