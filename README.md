@@ -41,5 +41,3 @@ npm test
 ```
 
 The integration smoke test verifies the canonical entrypoint, health endpoint, AI gateway behavior without a key, and that removed legacy runtime paths are not exposed.
-
-<!-- cleanup trigger -->
