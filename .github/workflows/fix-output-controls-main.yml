@@ -1,5 +1,4 @@
-# retrigger canonical output controls fixer
-name: Apply Campusly output controls fix
+name: Campusly output controls fixer
 on:
   push:
     branches: [main]
@@ -7,67 +6,19 @@ permissions:
   contents: write
 jobs:
   fix:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply canonical output controls
-        shell: bash
+      - name: Apply fix
+        run: python3 scripts/fix_output_controls.py
+      - name: Validate and commit
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('campusly-v5.js'); s=p.read_text()
-          s=re.sub(r"function reminders\(\).*?\nfunction settings\(\)", "function settings()", s, flags=re.S)
-          s=re.sub(r"function reminderModal\(\).*?\n", "", s)
-          s=re.sub(r"function toggleReminder\(.*?\nfunction deleteReminder\(.*?\n", "", s, flags=re.S)
-          s=s.replace("S.reminders.filter(x=>x.date===k&&!x.done).forEach(x=>notifyBrowser(x.title));","")
-          s=s.replace("window.reminderModal=reminderModal;window.toggleReminder=toggleReminder;window.deleteReminder=deleteReminder;","")
-          s=s.replace("grades:[],reminders:[],notifications:[],ai:[]", "grades:[],notifications:[],ai:[]")
-          s=re.sub(r"function menu\(\).*?\nfunction notes", '''function menu(){return shell(header('CAMPUSLY','Menu','Fitur yang nggak perlu nongkrong di bar utama.')+`<div class="developer-strip"><div class="dev-avatar">R</div><div class="dev-copy"><b>Rizky Khoillu Rochman</b><span>Developer Campusly · Email · Instagram</span></div><div class="dev-links"><a href="mailto:rizkykhoilillurochman@gmail.com">Email</a><a href="https://instagram.com/therealramanih_" target="_blank" rel="noopener">Instagram</a></div></div><div class="menu-grid">${[['notes','note','Catatan','Simpan materi & ide'],['finance','wallet','Keuangan','Catat pemasukan & pengeluaran'],['gpa','chart','GPA / IPK','Pantau nilai kuliah'],['settings','settings','Profil & pengaturan','Data diri, tema, notifikasi']].map(x=>`<button onclick="go('${x[0]}')">${icon(x[1])}<div><b>${x[2]}</b><small>${x[3]}</small></div><span>›</span></button>`).join('')}</div>`)}
-function notes''', s, flags=re.S)
-          s=re.sub(r"function tools\(\).*?\nfunction render", '''function tools(){return shell(header('UTILITY','Tools kuliah','Yang nggak masuk bar utama, gue taruh di sini.')+`<div class="tool-grid"><button onclick="science()">${icon('chart')}<b>Kalkulator sains</b><small>Hitung cepat + simbol lengkap</small></button><button onclick="translator()">${icon('globe')}<b>Translator</b><small>Terjemahin tanpa ribet</small></button><button onclick="timer()">${icon('clock')}<b>Study timer</b><small>Pomodoro 25 menit</small></button><button onclick="convert()">${icon('chart')}<b>Konversi satuan</b><small>Panjang, berat, suhu</small></button><button onclick="gradeCalc()">${icon('chart')}<b>Kalkulator nilai</b><small>Hitung nilai berbobot</small></button></div>`)}
-function render''', s, flags=re.S)
-          s=s.replace("const pages={home,schedule,tasks,calendar,ai,menu,notes,finance,gpa,reminders,settings,tools};", "const pages={home,schedule,tasks,calendar,ai,menu,notes,finance,gpa,settings,tools};")
-          s=re.sub(r"function science\(\).*?\nfunction timer", '''function science(){modal('Kalkulator sains',`<div class="calc"><input id="calc" readonly placeholder="0"><div class="calc-grid">${['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','(',')','sin','cos','tan','log','√','^','π','⌫','C','='].map(k=>`<button onclick="calcPress('${k}')">${k}</button>`).join('')}</div></div>`,()=>document.querySelector('.overlay')?.remove(),'Tutup')}
-function calcPress(k){const o=$('#calc');if(!o)return;if(k==='C'){o.value='';return}if(k==='⌫'){o.value=o.value.slice(0,-1);return}if(k==='='){try{o.value=Function('return '+o.value.replace(/π/g,'Math.PI').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/√/g,'Math.sqrt').replace(/sin\\(/g,'Math.sin(').replace(/cos\\(/g,'Math.cos(').replace(/tan\\(/g,'Math.tan(').replace(/log\\(/g,'Math.log10(').replace(/\\^/g,'**'))()}catch{o.value='Error'}return}o.value+=k}
-function timer''', s, flags=re.S)
-          s=re.sub(r"function translator\(\).*?\nfunction science", '''function translator(){const langs=[['id','Indonesia'],['en','Inggris'],['ms','Melayu'],['ar','Arab'],['zh','Mandarin'],['ja','Jepang'],['ko','Korea'],['fr','Prancis'],['de','Jerman'],['es','Spanyol']];modal('Translator',`<div class="form">${select('Dari','from','id',langs)}${select('Ke','to','en',langs)}${area('Teks input','text','','Tulis teks yang mau diterjemahin...')}<textarea id="tr-out" class="output-box" readonly placeholder="Hasil terjemahan akan muncul di sini..."></textarea></div>`,async()=>{const f=new FormData($('.modal-body')),out=$('#tr-out');if(!String(f.get('text')||'').trim())return toast('Teks input belum diisi.');out.value='Lagi nerjemahin…';try{out.value=await genAI(`Terjemahkan dari ${f.get('from')} ke ${f.get('to')}. Pertahankan makna dan format. Jangan beri komentar tambahan.\n\n${f.get('text')}`,'translate')}catch(e){out.value='⚠️ '+e.message}},'Translate')}
-function science''', s, flags=re.S)
-          s=re.sub(r"function convert\(\).*?\nfunction gradeCalc", '''function convert(){modal('Konversi satuan',`<div class="form">${field('Nilai','v',1,'number')}${select('Dari','from','km',[['km','km'],['m','m'],['cm','cm'],['kg','kg'],['g','g'],['C','C'],['F','F']])}${select('Ke','to','m',[['km','km'],['m','m'],['cm','cm'],['kg','kg'],['g','g'],['C','C'],['F','F']])}${area('Hasil','output','','Hasil konversi akan muncul di sini...')}</div>`,()=>{const f=new FormData($('.modal-body')),v=Number(f.get('v')),a=f.get('from'),b=f.get('to');let r=v;if(a==='km'&&b==='m')r=v*1000;else if(a==='m'&&b==='km')r=v/1000;else if(a==='m'&&b==='cm')r=v*100;else if(a==='cm'&&b==='m')r=v/100;else if(a==='kg'&&b==='g')r=v*1000;else if(a==='g'&&b==='kg')r=v/1000;else if(a==='C'&&b==='F')r=v*9/5+32;else if(a==='F'&&b==='C')r=(v-32)*5/9;const out=$('.modal-body [name="output"]');if(out)out.value=`Hasil: ${r}`},'Konversi')}
-function gradeCalc''', s, flags=re.S)
-          s=s.replace("${field('Bobot ujian (%)','bw',60,'number')}<div id=\"gr\" class=\"result\"></div>", "${field('Bobot ujian (%)','bw',60,'number')}${area('Hasil','output','','Nilai akhir akan muncul di sini...')}")
-          s=s.replace("$('#gr').textContent=`Nilai akhir: ${r.toFixed(2)}`", "$('.modal-body [name=\"output\"]').value=`Nilai akhir: ${r.toFixed(2)}`")
-          s=s.replace('<div id="scan-out" class="result"></div>', '<textarea id="scan-out" class="output-box" readonly placeholder="Hasil scan soal akan muncul di sini..."></textarea>')
-          s=s.replace("out.textContent='Lagi baca soal…';", "out.value='Lagi baca soal…';")
-          s=s.replace("out.textContent=d.text", "out.value=d.text")
-          s=s.replace("out.textContent='⚠️ '+e.message", "out.value='⚠️ '+e.message")
-          s=s.replace('<div id="paper-out" class="result"></div>', '<textarea id="paper-out" class="output-box" readonly placeholder="Draft makalah akan muncul di sini..."></textarea><div id="paper-actions" class="result-actions"></div>')
-          s=s.replace("out.textContent='Campusly lagi nyusun makalah… jangan ditinggal 😎';", "out.value='Campusly lagi nyusun makalah… jangan ditinggal 😎';")
-          s=s.replace("out.innerHTML=`<pre>${esc(text)}</pre><div class=\"result-actions\"><button class=\"btn\" onclick=\"downloadText('makalah.md',window.__paperText)\">Simpan .md</button><button class=\"btn primary\" onclick=\"exportPDF(window.__paperText,window.__paperTitle)\">Download PDF</button></div>`", "out.value=text;$('#paper-actions').innerHTML=`<button class=\"btn\" onclick=\"downloadText('makalah.md',window.__paperText)\">Simpan .md</button><button class=\"btn primary\" onclick=\"exportPDF(window.__paperText,window.__paperTitle)\">Download PDF</button>`")
-          s=s.replace('<div id="ppt-out" class="result"></div>', '<textarea id="ppt-out" class="output-box" readonly placeholder="Materi slide akan muncul di sini..."></textarea><div id="ppt-actions" class="result-actions"></div>')
-          s=s.replace("out.textContent='Lagi nyusun slide…';", "out.value='Lagi nyusun slide…';")
-          s=s.replace("out.innerHTML=`<pre>${esc(text)}</pre><div class=\"result-actions\"><button class=\"btn primary\" onclick=\"exportPPT(window.__pptText,window.__pptTitle)\">Download PPTX</button></div>`", "out.value=text;$('#ppt-actions').innerHTML=`<button class=\"btn primary\" onclick=\"exportPPT(window.__pptText,window.__pptTitle)\">Download PPTX</button>`")
-          s=re.sub(r"<button onclick=\"imageModal\(\)\">.*?</button>", "", s)
-          s=re.sub(r"function imageModal\(\).*?\n", "", s)
-          s=s.replace('window.imageModal=imageModal;', '')
-          s=s.replace('Semua yang penting buat kuliah, langsung kelihatan.','Yang penting buat kuliah, langsung kelihatan.')
-          p.write_text(s)
-          css=Path('campusly-v5.css'); c=css.read_text(); c+='\n.output-box{width:100%;min-height:170px;resize:vertical;box-sizing:border-box;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);color:var(--text);font:inherit;line-height:1.55}.mobile-nav{grid-template-columns:repeat(6,1fr)}\n'; css.write_text(c)
-          PY
           node --check campusly-v5.js
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add campusly-v5.js campusly-v5.css
-          git commit -m "fix: restore tool outputs and controls" || exit 0
-          git push
-      - name: Remove one-shot fixer
-        if: success()
-        shell: bash
-        run: |
-          git rm .github/workflows/fix-output-controls-main.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix: restore tool outputs and controls" || true
+          git rm .github/workflows/fix-output-controls-main.yml scripts/fix_output_controls.py
           git commit -m "chore: remove one-shot output fixer"
           git push
