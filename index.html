@@ -25,12 +25,13 @@
   const enhance=()=>{
     document.getElementById('campusly-back')?.remove();
     if(!location.hash||location.hash==='#home')return;
-    const tools=document.querySelector('.page-tools');
-    if(!tools||tools.querySelector('.back-inline'))return;
+    const eyebrow=document.querySelector('.eyebrow');
+    const host=eyebrow?.parentElement;
+    if(!host||host.querySelector('.back-inline'))return;
     const b=document.createElement('button');
     b.type='button';b.className='back-inline';b.innerHTML='<span aria-hidden="true">‹</span><span>Kembali</span>';
     b.onclick=()=>{if(history.length>1)history.back();else window.go?.('home')};
-    tools.prepend(b);
+    host.insertBefore(b,eyebrow);
   };
   addEventListener('hashchange',()=>setTimeout(enhance,0));
   const s=document.createElement('script');s.src='/app.js?v=63';s.onload=()=>setTimeout(enhance,0);s.onerror=()=>show('Runtime aplikasi tidak dapat dimuat: /app.js?v=63');document.body.appendChild(s);
