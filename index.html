@@ -8,10 +8,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-touch-fullscreen" content="yes">
-<link rel="manifest" href="/manifest.webmanifest?v=52">
+<link rel="manifest" href="/manifest.webmanifest?v=53">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles.css?v=52">
+<link rel="stylesheet" href="/styles-v2.css?v=53">
 <title>Campusly — Student Workspace</title>
 </head>
 <body>
@@ -40,10 +40,8 @@
   };
   window.addEventListener('error',e=>{ if(e.error) showBootError(e.error.message||e.error); });
   window.addEventListener('unhandledrejection',e=>showBootError(e.reason?.message||e.reason||'Runtime aplikasi mengalami error.'));
-  const s=document.createElement('script');
-  s.src='/app.js?v=52';
-  s.onerror=()=>showBootError('Runtime aplikasi tidak dapat dimuat dari server.');
-  document.head.appendChild(s);
+  const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Runtime aplikasi tidak dapat dimuat: '+src));document.head.appendChild(s);});
+  load('/app-v2.js?v=53').then(()=>load('/enhancements.js?v=53')).catch(e=>showBootError(e.message));
 })();
 </script>
 </body>
