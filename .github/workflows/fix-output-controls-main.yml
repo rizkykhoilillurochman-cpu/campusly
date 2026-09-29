@@ -1,3 +1,4 @@
+# retrigger canonical output controls fixer
 name: Apply Campusly output controls fix
 on:
   push:
