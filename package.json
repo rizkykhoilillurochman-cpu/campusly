@@ -1,14 +1,12 @@
 {
   "name": "campusly",
-  "version": "2.1.0-student-workspace",
+  "version": "2.2.0-student-workspace",
   "private": true,
   "scripts": {
     "start": "node campusly-launcher.js",
     "start:prod": "NODE_ENV=production node campusly-launcher.js",
-    "check": "node --check app.js && node --check server.js && node --check campusly-server.js && node --check campusly-launcher.js && node --check ai-runtime.js && node --check enhancements.js && node --check non-ai-upgrade.js && node --check final-polish.js",
+    "check": "node --check app.js && node --check ui.js && node --check server.js && node --check campusly-server.js && node --check campusly-launcher.js",
     "test": "node tests/integration.js"
   },
-  "engines": {
-    "node": ">=22"
-  }
+  "engines": {"node": ">=22"}
 }
