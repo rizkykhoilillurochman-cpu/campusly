@@ -3,47 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#060a18">
-<meta name="description" content="Campusly — pusat tugas, jadwal, catatan, GPA, fokus, dan kehidupan kuliah.">
+<meta name="theme-color" content="#f5f6f8">
+<meta name="description" content="Campusly — workspace kuliah untuk tugas, jadwal, catatan, nilai, fokus, dan AI.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-touch-fullscreen" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Campusly">
-<link rel="manifest" href="/manifest.webmanifest?v=45">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest?v=50">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles.css?v=45">
-<style>
-.campusly-svg{display:block;width:20px;height:20px;flex:0 0 20px;vector-effect:non-scaling-stroke}.side-nav .ico,.mobile-nav .micon{width:24px;height:24px;display:grid;place-items:center;flex:0 0 24px}.side-nav .ico .campusly-svg{width:20px;height:20px}.mobile-nav .micon .campusly-svg{width:21px;height:21px}.campusly-search-icon{width:20px;height:20px;display:grid;place-items:center;color:#aab4d0;flex:0 0 20px}.campusly-search-icon .campusly-svg{width:18px;height:18px}.campusly-back{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin:0 0 14px;padding:9px 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.065);color:#f7f8ff;font:inherit;font-size:13px;font-weight:750;cursor:pointer}.campusly-back .campusly-svg{width:18px;height:18px}@media(max-width:700px){.campusly-back{min-height:40px;margin-bottom:12px}.content{scroll-padding-bottom:150px;padding-bottom:calc(105px + env(safe-area-inset-bottom))}.mobile-nav{height:68px;border-radius:20px;bottom:max(8px,env(safe-area-inset-bottom));left:8px;right:8px}.cal-head,.cal-grid{min-width:0}.cal-cell{min-height:78px;padding:6px 3px}.calendar-card{overflow-x:hidden}}
-#boot-error{display:none;min-height:100vh;place-items:center;padding:24px;background:#060a18;color:#f7f8ff;font-family:system-ui,sans-serif;text-align:center}#boot-error .box{max-width:520px;padding:28px;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:#121a31}#boot-error button{margin-top:14px;padding:12px 18px;border:0;border-radius:12px;background:#7565ff;color:#fff;font-weight:800}
-</style>
+<link rel="stylesheet" href="/styles-v2.css?v=50">
 <title>Campusly — Student Workspace</title>
 </head>
 <body>
 <div id="app"></div>
-<div id="boot-error"><div class="box"><h1>Campusly belum berhasil dimuat</h1><p id="boot-error-text">Sedang mencoba memuat ulang versi terbaru.</p><button type="button" onclick="location.reload()">Muat ulang</button></div></div>
+<div id="boot-error" hidden></div>
 <script>
-(async()=>{
-  const showError=(e)=>{const box=document.getElementById('boot-error'),txt=document.getElementById('boot-error-text');if(txt)txt.textContent='Gagal memuat aplikasi: '+(e?.message||String(e||'unknown error'));if(box)box.style.display='grid'};
-  try{
-    if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}
-    if('caches' in window){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}
-  }catch(e){}
-  window.addEventListener('error',e=>{if(e?.error)showError(e.error)},{once:true});
-  window.addEventListener('unhandledrejection',e=>showError(e?.reason),{once:true});
-  const s=document.createElement('script');s.src='/app.js?v=45';s.onload=()=>{setTimeout(applyCampuslyUI,0)};s.onerror=()=>showError(new Error('app.js tidak dapat dimuat dari server'));document.head.appendChild(s);
-})();
-function applyCampuslyUI(){
-  const icons={home:'M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',tasks:'M5 12.5 9.2 17 19 6.5',calendar:'M5 4h14a2 2 0 0 1 2 2v13H3V6a2 2 0 0 1 2-2zm3-2v4m8-4v4M3 9h18M7 13h3M14 13h3M7 17h3',ai:'M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5zM19 16l.6 2.4L22 19l-2.4.6L19 22l-.6-2.4L16 19l2.4-.6z',menu:'M4 7h16M4 12h16M4 17h16',search:'M11 4.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM16 16l4.5 4.5',back:'M19 12H5M12 19l-7-7 7-7'};
-  const svg=p=>`<svg class="campusly-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${p}"/></svg>`;
-  const routeOf=b=>(b.getAttribute('onclick')||'').match(/go\(['"]([^'"]+)['"]\)/)?.[1]||'';
-  document.querySelectorAll('.side-nav button,.mobile-nav button').forEach(b=>{const r=routeOf(b),slot=b.querySelector('.ico,.micon');if(slot&&icons[r])slot.innerHTML=svg(icons[r])});
-  const search=document.querySelector('.search'),input=search?.querySelector('input');if(search&&input&&!search.querySelector('.campusly-search-icon')){const x=document.createElement('span');x.className='campusly-search-icon';x.innerHTML=svg(icons.search);search.insertBefore(x,input)}
-  const internal=new Set(['home','tasks','calendar','ai','menu','notes','schedule','semester','gpa','finance','focus','analytics','thesis','documents','tools','notifications','reminders','settings']);const route=location.hash.slice(1)||'home';document.querySelector('.campusly-back')?.remove();if(route!=='home'){const c=document.querySelector('.content'),f=c?.firstElementChild;if(c&&f){const b=document.createElement('button');b.className='campusly-back';b.type='button';b.innerHTML=svg(icons.back)+'<span>Kembali</span>';b.onclick=()=>{if(internal.has('home')&&typeof window.go==='function')window.go('home');else location.hash='home'};c.insertBefore(b,f)}}
-}
-window.addEventListener('hashchange',()=>setTimeout(applyCampuslyUI,20));
-new MutationObserver(()=>setTimeout(applyCampuslyUI,0)).observe(document.getElementById('app'),{childList:true,subtree:true});
+window.addEventListener('error',e=>{if(!e.error)return;const x=document.getElementById('boot-error');if(x){x.hidden=false;x.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui"><div><h1>Campusly belum berhasil dimuat</h1><p>'+String(e.error.message||e.error)+'</p><button onclick="location.reload()">Muat ulang</button></div></div>'}});
+const s=document.createElement('script');s.src='/app-v2.js?v=50';s.onerror=()=>{const x=document.getElementById('boot-error');x.hidden=false;x.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui"><div><h1>Campusly belum berhasil dimuat</h1><p>Runtime aplikasi tidak dapat dimuat.</p><button onclick="location.reload()">Muat ulang</button></div></div>'};document.head.appendChild(s);
 </script>
 </body>
 </html>
