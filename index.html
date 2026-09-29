@@ -30,6 +30,7 @@
     if(!host||host.querySelector('.back-inline'))return;
     const b=document.createElement('button');
     b.type='button';b.className='back-inline';b.innerHTML='<span aria-hidden="true">‹</span><span>Kembali</span>';
+    b.style.cssText='display:inline-flex;align-items:center;gap:6px;margin:0 0 8px 0;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);font:700 12px system-ui;box-shadow:none';
     b.onclick=()=>{if(history.length>1)history.back();else window.go?.('home')};
     host.insertBefore(b,eyebrow);
   };
