@@ -13,6 +13,11 @@
   <link rel="apple-touch-icon" href="/icon.svg">
   <link rel="stylesheet" href="/campusly-v5.css?v=clean-final-20260930">
   <title>Campusly</title>
+  <style>
+    /* Canonical navigation guard: Beranda is a required first sidebar item. */
+    .app > aside > button.home-nav,
+    .app > aside > button:first-of-type { display:flex !important; visibility:visible !important; opacity:1 !important; }
+  </style>
 </head>
 <body>
   <div id="app"><div class="fatal"><div><h1>Campusly lagi nyiapin workspace…</h1><p>Kalau ini lama, muat ulang sekali.</p><button class="btn primary" onclick="location.reload()">Muat ulang</button></div></div></div>
