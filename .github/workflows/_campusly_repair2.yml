@@ -1,0 +1,46 @@
+name: campusly-repair2
+on:
+  push:
+    branches:
+      - main
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('campusly-v5.js')
+          s=p.read_text()
+          if 'CANONICAL_OUTPUT_FIX_V1' not in s:
+              reps=[
+                ('/* Campusly — canonical frontend. One file, no overlay/patch layers. */','/* Campusly — canonical frontend. One file, no overlay/patch layers. */\n/* CANONICAL_OUTPUT_FIX_V1 */'),
+                ('<div class="modal-body">${body}</div>','<form class="modal-body" onsubmit="return false">${body}</form>'),
+                ('<button onclick="go(\'tools\')">${icon(\'settings\')}<b>Tools kuliah</b><small>Hitung, terjemahin, konversi, fokus</small></button>',''),
+                ("out.value='Campusly lagi nyusun makalah… jangan ditinggal 😎'","out.textContent='Campusly lagi nyusun makalah… jangan ditinggal 😎'"),
+                ("out.value=text;$('#paper-actions').innerHTML","out.textContent=text;$('#paper-actions').innerHTML"),
+                ('<div id="paper-out" class="result output-box">Draft bakal muncul di sini.</div>','<div id="paper-out" class="result output-box">Draft bakal muncul di sini.</div><div id="paper-actions" class="actions"></div>'),
+                ("out.value=text;$('#ppt-actions').innerHTML","out.textContent=text;$('#ppt-actions').innerHTML"),
+                ('<div id="ppt-out" class="result output-box">Materi slide bakal muncul di sini.</div>','<div id="ppt-out" class="result output-box">Materi slide bakal muncul di sini.</div><div id="ppt-actions" class="actions"></div>'),
+                ('out.value=d.text','out.textContent=d.text'),
+                ("out.value='⚠️ '+e.message","out.textContent='⚠️ '+e.message"),
+                ("$('.modal-body [name=\"output\"]').value=`Nilai akhir: ${r.toFixed(2)}`","$('#gr').textContent=`Nilai akhir: ${r.toFixed(2)}`"),
+              ]
+              for a,b in reps:
+                  s=s.replace(a,b)
+              p.write_text(s)
+              print('patched')
+          else:
+              print('already patched')
+          PY
+          node --check campusly-v5.js
+          git config user.name 'Campusly Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add campusly-v5.js
+          git rm .github/workflows/_campusly_repair2.yml .github/workflows/_campusly_fix.yml || true
+          git commit -m 'fix: repair Campusly canonical UI and outputs' || exit 0
+          git push
