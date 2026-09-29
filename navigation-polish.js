@@ -19,30 +19,45 @@
     ai:['Campusly AI','M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5zM19 16l.6 2.4L22 19l-2.4.6L19 22l-.6-2.4L16 19l2.4-.6z'],
     notifications:['Notifications','M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4'],
     reminders:['Reminders','M7 4h10v16H7zM9 8h6M9 12h6M9 16h4'],
-    settings:['Settings','M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-5v3m0 13v3m9-10h-3M6 12H3m15.4-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6']
+    settings:['Settings','M12 8a4 4 0 1 0 0 8 4 4 0 0 0-0-8zm0-5v3m0 13v3m9-10h-3M6 12H3m15.4-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6']
   };
 
+  const ACTIONS={
+    'Scan soal':'M4 7h16v13H4zM8 7l1.5-3h5L16 7M12 11a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+    'Buat makalah':'M6 3h9l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm8 0v4h4M8 11h8M8 15h8M8 19h5',
+    'Study plan':'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM8 4v16M11 9h5M11 13h5M11 17h3',
+    'Analisis GPA':'M5 19V10M12 19V6M19 19v-9M3 21h18',
+    'PDF':'M6 3h9l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm8 0v4h4M8 12h8M8 16h6',
+    'PPT':'M4 5h16v14H4zM8 16l3-3 2 2 3-4 4 5',
+    'Gambar':'M4 5h16v14H4zM7 16l3-3 2 2 3-4 3 5M8 9h.01',
+    'Hapus chat':'M6 6h12M9 6v-2h6v2M8 6l1 15h6l1-15M10 10v7M14 10v7',
+    'Kirim lagi':'M20 12a8 8 0 1 1-2.3-5.7M20 4v6h-6',
+    'Prioritas hari ini':'M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8',
+    'Hapus chat':'M6 6h12M9 6v-2h6v2M8 6l1 15h6l1-15M10 10v7M14 10v7'
+  };
+
+  function svgPath(path){
+    return `<svg class="campusly-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+  }
   function svg(route){
     const item=ICONS[route]||ICONS.home;
-    return `<svg class="campusly-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${item[1]}"/></svg>`;
+    return svgPath(item[1]);
   }
-
   function routeFromButton(btn){
     const m=(btn.getAttribute('onclick')||'').match(/go\(['"]([^'"]+)['"]\)/);
     return m?m[1]:null;
   }
+  function cleanLabel(text){return String(text||'').replace(/^\s*[^\p{L}\p{N}]+/u,'').replace(/\s+/g,' ').trim()}
 
   function polishIcons(){
     document.querySelectorAll('.side-nav button').forEach(btn=>{
-      const r=routeFromButton(btn);
-      const el=btn.querySelector('.ico');
+      const r=routeFromButton(btn),el=btn.querySelector('.ico');
       if(r&&el)el.innerHTML=svg(r);
     });
     document.querySelectorAll('.mobile-nav button').forEach(btn=>{
-      const r=routeFromButton(btn);
-      const el=btn.querySelector('.micon');
+      const r=routeFromButton(btn),el=btn.querySelector('.micon');
       if(!el)return;
-      el.innerHTML=r?svg(r):`<svg class="campusly-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`;
+      el.innerHTML=r?svg(r):svgPath('M4 7h16M4 12h16M4 17h16');
     });
     const search=document.querySelector('.search');
     if(search&&!search.querySelector('.campusly-search-icon')){
@@ -50,11 +65,19 @@
       if(input){
         const icon=document.createElement('span');
         icon.className='campusly-search-icon';
-        icon.innerHTML='<svg class="campusly-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>';
+        icon.innerHTML=svgPath('M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM16 16l4.5 4.5');
         search.insertBefore(icon,input);
-        if(search.firstChild && search.firstChild.nodeType===3)search.firstChild.remove();
+        if(search.firstChild&&search.firstChild.nodeType===3)search.firstChild.remove();
       }
     }
+    document.querySelectorAll('.content button').forEach(btn=>{
+      if(btn.classList.contains('campusly-iconized'))return;
+      const label=cleanLabel(btn.textContent);
+      const path=ACTIONS[label];
+      if(!path)return;
+      btn.classList.add('campusly-iconized');
+      btn.innerHTML=`<span class="campusly-action-icon">${svgPath(path)}</span><span>${label}</span>`;
+    });
   }
 
   let previousRoute='home';
