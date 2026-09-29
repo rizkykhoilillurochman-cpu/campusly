@@ -12,12 +12,10 @@ async function waitForServer(){const start=Date.now();while(Date.now()-start<100
 (async()=>{try{
   await waitForServer();
   let r=await req('GET','/');if(r.status!==200||!String(r.body).includes('Campusly'))throw Error('shell');
-  r=await req('GET','/manifest.webmanifest?v=41');if(r.status!==200||r.body.short_name!=='Campusly')throw Error('manifest');
-  r=await req('GET','/styles.css?v=41');if(r.status!==200||!String(r.body).includes('--accent'))throw Error('styles');
-  r=await req('GET','/ui.css?v=4');if(r.status!==200||!String(r.body).includes('campusly-back'))throw Error('ui css');
-  r=await req('GET','/ui.js?v=4');if(r.status!==200||!String(r.body).includes('mobile back navigation'))throw Error('ui js');
-  r=await req('GET','/sw-v30.js?v=42');if(r.status!==200||!String(r.body).includes('campusly-v42'))throw Error('service worker');
-  r=await req('GET','/app.js?v=41');if(r.status!==200||!String(r.body).includes('const KEY'))throw Error('app');
+  r=await req('GET','/manifest.webmanifest?v=42');if(r.status!==200||r.body.short_name!=='Campusly')throw Error('manifest');
+  r=await req('GET','/styles.css?v=42');if(r.status!==200||!String(r.body).includes('--accent'))throw Error('styles');
+  r=await req('GET','/sw-v30.js?v=43');if(r.status!==200||!String(r.body).includes('campusly-v43'))throw Error('service worker');
+  r=await req('GET','/app.js?v=42');if(r.status!==200||!String(r.body).includes('const KEY'))throw Error('app');
   for(const legacy of ['/ai-fix.js','/ai-runtime.js','/developer-contact.js']){r=await req('GET',legacy);if(r.status!==404)throw Error(`legacy file still served: ${legacy}`)}
   r=await req('GET','/api/health');if(r.status!==200||!r.body.ok)throw Error('health');
   r=await req('GET','/api/ready');if(r.status!==200||!r.body.ready)throw Error('ready');

@@ -10,18 +10,37 @@
 <meta name="apple-touch-fullscreen" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Campusly">
-<link rel="manifest" href="/manifest.webmanifest?v=41">
+<link rel="manifest" href="/manifest.webmanifest?v=42">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/styles.css?v=41">
-<link rel="stylesheet" href="/ui.css?v=4">
+<link rel="stylesheet" href="/styles.css?v=42">
+<style>
+/* Campusly canonical UI layer. */
+.campusly-svg{display:block;width:20px;height:20px;flex:0 0 20px;vector-effect:non-scaling-stroke}.side-nav .ico,.mobile-nav .micon{width:24px;height:24px;display:grid;place-items:center;flex:0 0 24px}.side-nav .ico .campusly-svg{width:20px;height:20px}.mobile-nav .micon .campusly-svg{width:21px;height:21px}.campusly-search-icon{width:20px;height:20px;display:grid;place-items:center;color:#aab4d0;flex:0 0 20px}.campusly-search-icon .campusly-svg{width:18px;height:18px}.campusly-back{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin:0 0 14px;padding:9px 12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(255,255,255,.065);color:#f7f8ff;font:inherit;font-size:13px;font-weight:750;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.14)}.campusly-back:hover{background:rgba(255,255,255,.12)}.campusly-back .campusly-svg{width:18px;height:18px}.side-nav button,.mobile-nav button,.btn,.campusly-back{-webkit-tap-highlight-color:transparent}.side-nav button:focus-visible,.mobile-nav button:focus-visible,.btn:focus-visible,.campusly-back:focus-visible{outline:2px solid rgba(143,134,255,.9);outline-offset:2px}@media(max-width:700px){.campusly-back{min-height:40px;margin-bottom:12px}.content{scroll-padding-bottom:150px}}
+</style>
 <title>Campusly — Student Workspace</title>
 </head>
 <body>
 <div id="app"></div>
 <div id="fatal-error" role="alert" aria-live="assertive"><div class="box"><h1>Campusly perlu dimuat ulang</h1><p>Ada masalah saat memuat halaman. Data lokal kamu tetap aman.</p><button type="button" onclick="location.reload()">Muat ulang</button><div data-error style="display:none"></div></div></div>
-<script>(function(){try{if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw-v30.js?v=42',{updateViaCache:'none'}).catch(function(){})}catch(e){}})();</script>
-<script src="/app.js?v=41"></script>
-<script src="/ui.js?v=4"></script>
+<script>(function(){try{if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw-v30.js?v=43',{updateViaCache:'none'}).catch(function(){})}catch(e){}})();</script>
+<script src="/app.js?v=42"></script>
+<script>
+/* Campusly canonical UI utilities: icons + mobile back navigation. */
+(() => {
+  'use strict';
+  const icons={home:'M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',tasks:'M5 12.5 9.2 17 19 6.5',calendar:'M5 4h14a2 2 0 0 1 2 2v13H3V6a2 2 0 0 1 2-2zm3-2v4m8-4v4M3 9h18M7 13h3M14 13h3M7 17h3',ai:'M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5zM19 16l.6 2.4L22 19l-2.4.6L19 22l-.6-2.4L16 19l2.4-.6z',menu:'M4 7h16M4 12h16M4 17h16',search:'M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM16 16l4.5 4.5',back:'M19 12H5M12 19l-7-7 7-7'};
+  const svg=(path,cls='')=>`<svg class="campusly-svg ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+  const internal=new Set(['home','tasks','calendar','ai','menu','notes','schedule','semester','gpa','finance','focus','analytics','thesis','documents','tools','notifications','reminders','settings']);
+  let current=location.hash.slice(1)||'home';let previous=current;
+  function routeFromButton(button){const m=(button.getAttribute('onclick')||'').match(/go\(['"]([^'"]+)['"]\)/);return m?.[1]||'';}
+  function applyIcons(){document.querySelectorAll('.side-nav button').forEach(b=>{const r=routeFromButton(b),slot=b.querySelector('.ico');if(slot&&icons[r])slot.innerHTML=svg(icons[r]);});document.querySelectorAll('.mobile-nav button').forEach(b=>{const r=routeFromButton(b),slot=b.querySelector('.micon');if(slot&&icons[r])slot.innerHTML=svg(icons[r]);});const search=document.querySelector('.search'),input=search?.querySelector('input');if(search&&input&&!search.querySelector('.campusly-search-icon')){const slot=document.createElement('span');slot.className='campusly-search-icon';slot.innerHTML=svg(icons.search);search.insertBefore(slot,input);}}
+  function addBack(){const route=location.hash.slice(1)||'home';document.querySelector('.campusly-back')?.remove();if(route==='home')return;const content=document.querySelector('.content'),first=content?.firstElementChild;if(!content||!first)return;const button=document.createElement('button');button.className='campusly-back';button.type='button';button.innerHTML=`${svg(icons.back)}<span>Kembali</span>`;button.onclick=()=>{if(internal.has(previous)&&previous!==route&&typeof window.go==='function'){window.go(previous);return;}if(typeof window.go==='function')window.go('home');else location.hash='home';};content.insertBefore(button,first);}
+  function apply(){applyIcons();addBack();}
+  window.addEventListener('hashchange',()=>{const next=location.hash.slice(1)||'home';if(internal.has(next)){previous=current;current=next;}setTimeout(apply,0);});
+  const app=document.getElementById('app');if(app)new MutationObserver(()=>{applyIcons();if((location.hash.slice(1)||'home')!=='home'&&!document.querySelector('.campusly-back'))addBack();}).observe(app,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',apply,{once:true});setTimeout(apply,0);
+})();
+</script>
 </body>
 </html>
