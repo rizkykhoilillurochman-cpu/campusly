@@ -1,12 +1,13 @@
 {
   "name": "campusly",
-  "version": "2.2.0-student-workspace",
+  "version": "2.3.0-production-hardening",
   "private": true,
   "scripts": {
-    "start": "node campusly-launcher.js",
-    "start:prod": "NODE_ENV=production node campusly-launcher.js",
-    "check": "node --check app.js && node --check server.js && node --check campusly-server.js && node --check campusly-launcher.js && node --check tests/integration.js",
+    "start": "node campusly-production-server.js",
+    "start:prod": "NODE_ENV=production node campusly-production-server.js",
+    "check": "node --check app.js && node --check server.js && node --check campusly-server.js && node --check campusly-production-server.js && node --check developer-contact.js && node --check tests/integration.js",
     "test": "node tests/integration.js"
   },
-  "engines": {"node": ">=22"}
+  "engines": {"node": ">=22"},
+  "dependencies": {"pptxgenjs": "4.0.1"}
 }
