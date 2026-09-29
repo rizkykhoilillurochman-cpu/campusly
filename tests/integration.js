@@ -44,9 +44,10 @@ async function waitForServer() {
     let r = await req('GET', '/');
     if (r.status !== 200 || !String(r.body).includes('Campusly')) throw new Error('canonical shell');
     r = await req('GET', '/campusly-v5.js?v=test');
-    if (r.status !== 200 || !String(r.body).includes('campusly_state_v5')) throw new Error('canonical frontend');
+    if (r.status !== 200 || !String(r.body).includes('campusly_state_v5') || !String(r.body).includes('Jadwal')) throw new Error('canonical frontend');
+    if (String(r.body).includes('Generate gambar') || String(r.body).includes('imageModal')) throw new Error('image generator still exposed in frontend');
     r = await req('GET', '/campusly-v5.css?v=test');
-    if (r.status !== 200 || !String(r.body).includes('--accent')) throw new Error('canonical stylesheet');
+    if (r.status !== 200 || !String(r.body).includes('--accent') || !String(r.body).includes('.back-btn')) throw new Error('canonical stylesheet');
     r = await req('GET', '/manifest.webmanifest?v=test');
     if (r.status !== 200 || r.body.short_name !== 'Campusly') throw new Error('manifest');
     for (const legacy of ['/app.js','/styles.css','/sw.js','/sw-v29.js','/sw-v30.js','/campusly-v5-final.js','/developer-contact.js','/runtime-fix.js']) {
@@ -54,8 +55,9 @@ async function waitForServer() {
     }
     r = await req('GET', '/api/health'); if (r.status !== 200 || !r.body.ok) throw new Error('health');
     r = await req('GET', '/api/ready'); if (r.status !== 200 || !r.body.ready) throw new Error('ready');
-    r = await req('GET', '/api/ai/health'); if (r.status !== 200 || !r.body.ok) throw new Error('AI health');
+    r = await req('GET', '/api/ai/health'); if (r.status !== 200 || !r.body.ok || r.body.imageGeneration !== false) throw new Error('AI health');
     r = await req('POST', '/api/ai', { messages: [{ role: 'user', content: 'halo' }] }); if (r.status !== 503) throw new Error('AI missing-key guard');
+    r = await req('POST', '/api/ai/image', { prompt: 'test' }); if (r.status !== 404) throw new Error('image endpoint still exposed');
     r = await req('POST', '/api/export/pdf', { title: 'Tes', content: 'Campusly PDF export test' }); if (r.status !== 200 || !String(r.headers['content-type']).includes('application/pdf')) throw new Error('PDF export');
     r = await req('POST', '/api/export/ppt', { title: 'Tes', content: 'SLIDE 1: Campusly\n- Test export' }); if (r.status !== 200 || !String(r.headers['content-type']).includes('presentationml.presentation')) throw new Error('PPTX export');
     console.log('Campusly integration tests: PASS');
