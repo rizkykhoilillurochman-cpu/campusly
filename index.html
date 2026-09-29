@@ -30,6 +30,7 @@
 (function(){var failed=false;function fatal(){if(failed)return;failed=true;var el=document.getElementById('fatal-error');if(el)el.style.display='grid'}window.addEventListener('error',function(e){if(e&&e.error)fatal()});window.addEventListener('unhandledrejection',function(){fatal()});try{if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw-v30.js?v=8').catch(function(){})}}catch(e){}})();
 </script>
 <script src="/app.js?v=31"></script>
+<script src="/navigation-polish.js?v=1"></script>
 <script src="/ai-runtime.js?v=10"></script>
 <script src="/enhancements.js?v=5"></script>
 <script src="/developer-contact.js?v=5"></script>
