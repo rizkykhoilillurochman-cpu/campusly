@@ -30,3 +30,5 @@ Canva Developers SDK documentation:
 - Design Import API: https://www.canva.dev/docs/apps/rest-apis/reference/design-imports/
 - Create Design Import Job: https://www.canva.dev/docs/apps/rest-apis/reference/design-imports/create-design-import-job/
 - OAuth authentication: https://www.canva.dev/docs/apps/rest-apis/authentication/
+
+<!-- canonical-polish trigger -->
