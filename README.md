@@ -1,35 +1,43 @@
 # Campusly
 
-Campusly is a student operating system built as a responsive PWA with a Node.js API boundary.
+Campusly is a responsive student workspace for tasks, schedules, notes, finances, tools, and AI.
+
+## Canonical structure
+
+The project intentionally keeps one frontend runtime and one production server:
+
+- `index.html` — single browser entrypoint
+- `campusly-v5.js` — canonical frontend application
+- `campusly-v5.css` — canonical stylesheet
+- `campusly-production-server.js` — public server, AI gateway, and exports
+- `server.js` — internal static/core server
+
+Do not add overlay scripts, `*-fix.js`, duplicate runtimes, or versioned service workers. Fix the canonical file instead.
 
 ## Run locally
 
 ```bash
+npm install
 npm start
 ```
 
 Open `http://localhost:8787`.
 
-## Production environment
+## Environment
 
-Set the variables in `.env.example` before deploying. Never put provider secrets in the frontend.
+Set `GEMINI_API_KEY` on the server for AI features. Optional variables include `GEMINI_MODEL`, `GEMINI_FALLBACK_MODELS`, and `GEMINI_IMAGE_MODEL`.
+
+Never put provider secrets in frontend code.
 
 ## Storage
 
-Campusly v1.0.0-rc1 uses SQLite with WAL mode for durable server-side user data and sessions. Existing `server-data.json` data is migrated automatically on first startup when the SQLite database is empty.
+The current frontend is local-first and stores the workspace state in browser `localStorage`. No committed SQLite database or server-side JSON data store is part of the canonical baseline.
 
-## Google OAuth
+## Quality checks
 
-Configure a Google OAuth Web application with redirect URI:
+```bash
+npm run check
+npm test
+```
 
-`https://YOUR_DOMAIN/api/auth/google/callback`
-
-Then set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`.
-
-## Document extraction
-
-TXT/MD/CSV/JSON/HTML are read directly. PDF uses `pdftotext`; Office/OpenDocument files use LibreOffice conversion. The deployed host must provide those binaries for server extraction.
-
-## Android
-
-`capacitor.config.json` is included as the packaging contract. An Android project/APK is not claimed as built until Capacitor/Android SDK tooling is installed and a release build succeeds.
+The integration smoke test verifies the canonical entrypoint, health endpoint, AI gateway behavior without a key, and that removed legacy runtime paths are not exposed.
