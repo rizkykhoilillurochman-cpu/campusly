@@ -36,26 +36,26 @@ function securityHeaders(res) {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-  );
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 }
 
 function serveStatic(req, res, pathname) {
   const file = pathname === '/' ? 'index.html' : pathname.slice(1).split('?')[0];
   if (!PUBLIC_FILES.has(file)) return false;
-
   const fullPath = path.join(ROOT, file);
   if (!fs.existsSync(fullPath)) return false;
 
+  // The HTML carries an explicit version query for JS/CSS. Never pin the app shell
+  // or its runtime assets to an immutable cache while the app is being iterated.
   const cache = file === 'index.html' || file === 'manifest.webmanifest'
-    ? 'no-cache'
-    : 'public, max-age=31536000, immutable';
+    ? 'no-cache, no-store, must-revalidate'
+    : 'no-cache, must-revalidate';
 
   res.writeHead(200, {
     'Content-Type': MIME[path.extname(fullPath)] || 'application/octet-stream',
-    'Cache-Control': cache
+    'Cache-Control': cache,
+    'Pragma': 'no-cache',
+    'Expires': '0'
   });
   fs.createReadStream(fullPath).pipe(res);
   return true;
@@ -67,7 +67,7 @@ const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      return json(res, 200, { ok: true, service: 'campusly-core', version: 'clean-v1' });
+      return json(res, 200, { ok: true, service: 'campusly-core', version: 'clean-final' });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/ready') {
