@@ -1,6 +1,6 @@
 {
   "name": "campusly",
-  "version": "4.0.0-clean",
+  "version": "4.1.0-clean",
   "private": true,
   "description": "Campusly student workspace with a single canonical frontend and AI gateway.",
   "scripts": {
@@ -10,5 +10,5 @@
     "test": "node tests/integration.js"
   },
   "engines": { "node": ">=22" },
-  "dependencies": { "pptxgenjs": "4.0.1" }
+  "dependencies": { "pptxgenjs": "4.0.1", "docx": "9.5.1" }
 }
