@@ -9,6 +9,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     touch-action: pan-y;
+    z-index: 300 !important;
     padding: calc(12px + env(safe-area-inset-top)) 10px calc(128px + env(safe-area-inset-bottom)) !important;
   }
 
