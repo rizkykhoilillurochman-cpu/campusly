@@ -1,0 +1,7 @@
+(()=>{
+const KEY='campusly_state_v3';
+const dk=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const id=()=>crypto.randomUUID?.()||Date.now()+Math.random().toString(16).slice(2);
+function run(){try{const s=JSON.parse(localStorage.getItem(KEY)||'{}'),p=s.profile||{},set=s.settings||{};if(!p.completed||set.notifications===false)return;const today=dk(new Date());s.notifications=Array.isArray(s.notifications)?s.notifications:[];s.tasks=Array.isArray(s.tasks)?s.tasks:[];s.events=Array.isArray(s.events)?s.events:[];const push=(key,title,body,route)=>{if(s.notifications.some(n=>n.key===key))return;s.notifications.unshift({id:id(),key,title,body,route,read:false,at:Date.now()});};s.tasks.filter(t=>!t.done&&t.deadline===today).forEach(t=>push(`task:${t.id}:${today}`,'Deadline hari ini 🔥',t.title,'tasks'));s.events.filter(e=>e.date===today).forEach(e=>push(`event:${e.id}:${today}`,'Ada agenda hari ini',`${e.time||''} ${e.title}`,'calendar'));s.notifications=s.notifications.slice(0,60);localStorage.setItem(KEY,JSON.stringify(s));const fresh=s.notifications.filter(n=>n.at>Date.now()-5000);if('Notification'in window&&Notification.permission==='granted')fresh.forEach(n=>{try{new Notification(n.title,{body:n.body,data:{route:n.route}})}catch{}});window.renderRepair?.()}catch(e){console.warn('Campusly reminder check failed',e)}}
+run();setInterval(run,60000);
+})();
