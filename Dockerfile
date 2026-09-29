@@ -3,6 +3,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
 COPY package.json ./
+RUN npm install --omit=dev --no-audit --no-fund
 COPY *.js *.html *.css *.webmanifest *.svg .env.example capacitor.config.json README.md ./
 RUN mkdir -p /app/data && chown -R node:node /app
 USER node
