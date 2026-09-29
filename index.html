@@ -24,6 +24,8 @@
   window.addEventListener('unhandledrejection',e=>show(e.reason?.message||e.reason||'Runtime aplikasi mengalami error.'));
   const enhance=()=>{
     document.getElementById('campusly-back')?.remove();
+    document.querySelector('.hero')?.remove();
+    document.querySelectorAll('.page-head p').forEach(p=>p.remove());
     if(!location.hash||location.hash==='#home')return;
     const eyebrow=document.querySelector('.eyebrow');
     const host=eyebrow?.parentElement;
