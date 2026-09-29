@@ -3,7 +3,9 @@
 
   const coreRender=window.render || (typeof render==='function'?render:null);
   const renderTools=()=>{if(typeof applyTheme==='function')applyTheme();const app=document.getElementById('app');if(app)app.innerHTML=typeof shell==='function'?shell(typeof tools==='function'?tools():'<div>Tools</div>'):'<div>Tools</div>';};
-  window.render=function(){if(location.hash==='#tools')return renderTools();return coreRender?.()};
+  const ensureMenuTools=()=>{if(location.hash!=='#menu')return;const host=document.querySelector('.menu-grid,.menu-section');if(!host||host.querySelector('[data-campusly-tools]'))return;const b=document.createElement('button');b.setAttribute('data-campusly-tools','1');b.type='button';b.innerHTML=`🧰<span><b>Tools kuliah</b><small>Kalkulator, translator, timer, konversi</small></span><i>›</i>`;b.onclick=()=>window.go('tools');host.prepend(b)};
+  const afterRender=()=>setTimeout(ensureMenuTools,0);
+  window.render=function(){if(location.hash==='#tools'){renderTools();return}const out=coreRender?.();afterRender();return out};
 
   const coreGo=window.go;
   window.go=function(r){
@@ -14,6 +16,6 @@
     }
     return coreGo?.(r);
   };
-  addEventListener('hashchange',()=>{if(location.hash==='#tools')renderTools()});
-  setTimeout(()=>window.render?.(),0);
+  addEventListener('hashchange',()=>{if(location.hash==='#tools')renderTools();else if(location.hash==='#menu')afterRender()});
+  setTimeout(()=>{window.render?.();afterRender()},0);
 })();
