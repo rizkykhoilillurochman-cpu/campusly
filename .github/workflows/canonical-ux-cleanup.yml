@@ -1,0 +1,51 @@
+name: Campusly canonical UX cleanup
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.event.head_commit.message != 'chore: remove canonical cleanup workflow'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply canonical UX cleanup
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('campusly-v5.js')
+          s=p.read_text()
+          s=s.replace('grades:[],reminders:[],notifications:[],ai:[]','grades:[],notifications:[],ai:[]')
+          s=s.replace("'Yang penting buat kuliah, langsung kelihatan.'","'Yang penting buat kuliah, langsung kelihatan. Gas tanpa ribet.'")
+          s=s.replace("'Fitur tambahan + identitas developer, ringkas biar nggak makan tempat.'","'Yang kepake gue taro di sini. Nggak ada fitur dobel.'")
+          s=re.sub(r"\['reminders','clock','Reminder','Pengingat tugas & agenda'\],",'',s)
+          s=re.sub(r"function reminders\(\).*?\nfunction settings",'function settings',s,flags=re.S)
+          s=re.sub(r"function reminderModal\(\).*?\nfunction toggleReminder",'',s,flags=re.S)
+          s=re.sub(r"function toggleReminder\(.*?\nfunction deleteReminder",'',s,flags=re.S)
+          s=re.sub(r"function deleteReminder\(.*?\nasync function api",'async function api',s,flags=re.S)
+          s=s.replace(',reminders,settings',',settings')
+          s=s.replace("window.reminderModal=reminderModal;window.toggleReminder=toggleReminder;window.deleteReminder=deleteReminder;",'')
+          s=s.replace('scheduleNotificationCheck();setInterval(scheduleNotificationCheck,30000);','')
+          s=re.sub(r"function scheduleNotificationCheck\(\).*?\nfunction backup",'function backup',s,flags=re.S)
+          tools_old="<button onclick=\"go('schedule')\">${icon('book')}<b>Jadwal kuliah</b><small>Lihat kelas mingguan</small></button>"
+          s=s.replace(tools_old,'')
+          s=s.replace("${field('Ke bahasa','to','English')}","${select('Ke bahasa','to','en',[['en','English'],['id','Bahasa Indonesia'],['ja','Jepang'],['ko','Korea'],['zh','Mandarin'],['es','Spanyol'],['fr','Prancis'],['de','Jerman'],['ar','Arab']])}")
+          old="${['7','8','9','/','4','5','6','*','1','2','3','-','0','.','(',')','sin','cos','tan','log','√','^','π','C','='].map(k=>`<button onclick=\"calcPress('${k}')\">${k}</button>`).join('')}"
+          new="${['7','8','9','÷','4','5','6','×','1','2','3','−','0','.','(',')','sin','cos','tan','log','√','^','π','⌫','C','='].map(k=>`<button onclick=\"calcPress('${k}')\">${k}</button>`).join('')}"
+          s=s.replace(old,new)
+          s=s.replace("if(k==='C'){o.value='';return}if(k==='=')", "if(k==='C'){o.value='';return}if(k==='⌫'){o.value=o.value.slice(0,-1);return}if(k==='=')")
+          s=s.replace("o.value.replace(/π/g,'Math.PI').replace(/√/g,'Math.sqrt').replace(/sin\\(/g,'Math.sin(').replace(/cos\\(/g,'Math.cos(').replace(/tan\\(/g,'Math.tan(').replace(/log\\(/g,'Math.log10(').replace(/\\^/g,'**')", "o.value.replace(/π/g,'Math.PI').replace(/√/g,'Math.sqrt').replace(/sin\\(/g,'Math.sin(').replace(/cos\\(/g,'Math.cos(').replace(/tan\\(/g,'Math.tan(').replace(/log\\(/g,'Math.log10(').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/\\^/g,'**')")
+          p.write_text(s)
+          PY
+          node --check campusly-v5.js
+          ! grep -q "function reminders\|function reminderModal\|function toggleReminder\|function deleteReminder" campusly-v5.js
+      - name: Remove temporary workflow
+        run: |
+          rm -f .github/workflows/canonical-ux-cleanup.yml
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add campusly-v5.js .github/workflows/canonical-ux-cleanup.yml
+          git commit -m "feat: finish canonical UX cleanup"
+          git push
