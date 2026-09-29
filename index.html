@@ -8,10 +8,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/manifest.webmanifest?v=300">
+<link rel="manifest" href="/manifest.webmanifest?v=301">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<link rel="stylesheet" href="/campusly-v5.css?v=2">
+<link rel="stylesheet" href="/campusly-v5.css?v=3">
 <title>Campusly</title>
 </head>
 <body>
@@ -23,7 +23,7 @@
     if('serviceWorker'in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(r=>r.unregister()));}
     if('caches'in window){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}
   }catch(e){console.warn('Campusly cache cleanup skipped',e)}
-  const s=document.createElement('script');s.src='/campusly-v5.js?v=2';document.body.appendChild(s);
+  const s=document.createElement('script');s.src='/campusly-v5-final.js?v=3';document.body.appendChild(s);
 })();
 </script>
 </body>
