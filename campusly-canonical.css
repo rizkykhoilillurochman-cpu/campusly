@@ -1,7 +1,0 @@
-@import url('/campusly-v5.css?v=20260930-1200');
-
-/* Canonical navigation geometry: every primary item, including Beranda, owns a visible icon slot. */
-.app>aside>.nav-item{display:flex!important;align-items:center!important;gap:10px!important;min-height:44px!important}
-.app>aside>.nav-item>.ui-icon{display:inline-grid!important;visibility:visible!important;opacity:1!important;width:20px!important;height:20px!important;min-width:20px!important;color:var(--muted)!important}
-.app>aside>.nav-item.active>.ui-icon,.app>aside>.nav-item:hover>.ui-icon{color:var(--text)!important}
-.app>aside>.home-nav>.ui-icon svg{display:block!important;width:20px!important;height:20px!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;visibility:visible!important;opacity:1!important}
