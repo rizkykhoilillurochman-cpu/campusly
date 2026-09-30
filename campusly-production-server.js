@@ -16,15 +16,15 @@ const MIME = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charse
 const nativeFetch = global.fetch;
 const hits = new Map();
 const retryable = new Set([408,429,500,502,503,504]);
+const SHUTDOWN_MODELS = new Set(['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.0-flash-exp']);
 
-const models = () => [...new Set([
-  process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-  ...(process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.5-flash-lite,gemini-2.0-flash').split(',')
-].map(x => x.trim()).filter(Boolean))];
-const visionModels = () => [...new Set([
-  process.env.GEMINI_VISION_MODEL || models()[0],
-  ...models()
-])];
+function models() {
+  return [...new Set([
+    process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    ...(process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.5-flash-lite').split(',')
+  ].map(x => x.trim()).filter(Boolean).filter(x => !SHUTDOWN_MODELS.has(x)))];
+}
+function visionModels() { return models(); }
 
 function fail(message, status = 500) { return Object.assign(new Error(message), { status }); }
 function json(res, status, data) {
@@ -98,8 +98,10 @@ function geminiPayload(body) {
 async function callGemini(body) {
   const key=String(process.env.GEMINI_API_KEY||'').trim();
   if(!key) throw fail('GEMINI_API_KEY belum diatur di environment server.',503);
+  const available=models();
+  if(!available.length) throw fail('Tidak ada model Gemini yang aktif dikonfigurasi.',503);
   const payload=geminiPayload(body); let last='AI gagal memberikan jawaban.';
-  for(const model of models()) {
+  for(const model of available) {
     try {
       const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
       let response=await nativeFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -179,8 +181,8 @@ const server=http.createServer(async(req,res)=>{
   try{
     securityHeaders(res);const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
     if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});return res.end();}
-    if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{ok:true,version:'canonical-v10'});
-    if(req.method==='GET'&&url.pathname==='/api/ready')return json(res,200,{ready:true,version:'canonical-v10',exports:['docx','pdf','pptx'],download:'native-browser'});
+    if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{ok:true,version:'canonical-v11'});
+    if(req.method==='GET'&&url.pathname==='/api/ready')return json(res,200,{ready:true,version:'canonical-v11',models:models(),exports:['docx','pdf','pptx'],download:'native-browser'});
     if(req.method==='GET'&&url.pathname==='/api/ai/health')return json(res,200,{ok:true,models:models(),vision:visionModels(),imageGeneration:false,exports:['docx','pdf','pptx']});
     if(req.method==='POST'&&url.pathname==='/api/ai'){if(!rate(req))return json(res,429,{error:'AI lagi ramai. Coba lagi sebentar.'});return json(res,200,{ok:true,text:await callGemini(await readJson(req))});}
     if(req.method==='POST'&&url.pathname==='/api/ai/vision'){if(!rate(req,20))return json(res,429,{error:'Scan lagi ramai. Coba lagi sebentar.'});return json(res,200,{ok:true,text:await callVision(await readJson(req))});}
@@ -191,6 +193,6 @@ const server=http.createServer(async(req,res)=>{
     return json(res,404,{error:'Not found'});
   }catch(error){console.error('Campusly server error:',error);if(!res.headersSent)return json(res,error.status||500,{error:error.message||'Internal server error'});res.destroy();}
 });
-server.listen(PORT,'0.0.0.0',()=>console.log(`Campusly canonical-v10 server listening on ${PORT}`));
+server.listen(PORT,'0.0.0.0',()=>console.log(`Campusly canonical-v11 server listening on ${PORT}`));
 function shutdown(){server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),3000).unref();}
 process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
