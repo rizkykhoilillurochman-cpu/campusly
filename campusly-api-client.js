@@ -51,7 +51,10 @@
       const data=await response.clone().json();
       if(data && typeof data.text==='string') data.text=strip(data.text);
       if(data && typeof data.content==='string') data.content=strip(data.content);
-      return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers:response.headers});
+      const headers=new Headers(response.headers);
+      headers.delete('content-length'); headers.delete('content-encoding');
+      headers.set('content-type','application/json; charset=utf-8');
+      return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers});
     }catch{
       try{
         const raw=await response.clone().text();
