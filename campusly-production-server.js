@@ -20,8 +20,8 @@ const SHUTDOWN_MODELS = new Set(['gemini-2.0-flash','gemini-2.0-flash-lite','gem
 
 function models() {
   return [...new Set([
-    process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-    ...(process.env.GEMINI_FALLBACK_MODELS || 'gemini-2.5-flash-lite').split(',')
+    process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+    ...(process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.7-flash,gemini-3.6-flash').split(',')
   ].map(x => x.trim()).filter(Boolean).filter(x => !SHUTDOWN_MODELS.has(x)))];
 }
 function visionModels() { return models(); }
@@ -138,61 +138,3 @@ async function callVision(body) {
 }
 const academicHeadings=new Set(['abstrak','kata kunci','pendahuluan','latar belakang','rumusan masalah','tujuan penelitian','manfaat penelitian','landasan teori','tinjauan pustaka','metode penelitian','metodologi penelitian','hasil penelitian','hasil dan pembahasan','pembahasan','kesimpulan','saran','daftar pustaka']);
 function classify(line){const s=line.trim(),n=s.replace(/^#+\s*/,'').replace(/:$/,'').trim().toLowerCase();return{blank:!s,heading:s.match(/^#{1,3}\s+(.+)$/)||(academicHeadings.has(n)?[s,n]:null),bullet:s.match(/^[-*•]\s+(.+)$/),number:s.match(/^\d+[.)]\s+(.+)$/)}}
-function inlineRuns(text){const runs=[];const re=/(\*\*([^*]+)\*\*|\*([^*]+)\*|_([^_]+)_)/g;let last=0,m;while((m=re.exec(text))){if(m.index>last)runs.push(new TextRun({text:text.slice(last,m.index),font:'Times New Roman',size:24}));runs.push(new TextRun({text:m[2]||m[3]||m[4],font:'Times New Roman',size:24,bold:!!m[2],italics:!m[2]}));last=re.lastIndex;}if(last<text.length)runs.push(new TextRun({text:text.slice(last),font:'Times New Roman',size:24}));return runs.length?runs:[new TextRun({text:'',font:'Times New Roman',size:24})]}
-async function makeDocx(text,title){
-  const children=[]; let firstTitle=true;
-  for(const raw of clean(text).split('\n')){
-    const c=classify(raw),s=raw.trim();
-    if(c.blank){children.push(new Paragraph({spacing:{after:0,line:360},children:[new TextRun({text:'',font:'Times New Roman',size:24})]}));continue;}
-    if(firstTitle){children.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:240,line:360},children:[new TextRun({text:(c.heading?.[1]||s).replace(/^#+\s*/,''),font:'Times New Roman',size:28,bold:true})]}));firstTitle=false;continue;}
-    if(c.heading){children.push(new Paragraph({spacing:{before:240,after:120,line:360},keepNext:true,children:[new TextRun({text:(c.heading[1]||c.heading[0]).replace(/^#+\s*/,''),font:'Times New Roman',size:24,bold:true})]}));continue;}
-    if(c.bullet){children.push(new Paragraph({style:'Normal',bullet:{level:0},spacing:{after:0,line:360},children:inlineRuns(c.bullet[1])}));continue;}
-    if(c.number){children.push(new Paragraph({style:'Normal',numbering:{reference:'campusly-numbered',level:0},spacing:{after:0,line:360},children:inlineRuns(c.number[1])}));continue;}
-    children.push(new Paragraph({alignment:AlignmentType.JUSTIFIED,indent:{firstLine:720},spacing:{after:0,line:360},widowControl:true,children:inlineRuns(s)}));
-  }
-  const doc=new Document({creator:'Campusly',title:title||'Campusly',description:'Dokumen akademik Campusly',styles:{default:{document:{run:{font:'Times New Roman',size:24},paragraph:{spacing:{line:360,after:0}}}}},numbering:{config:[{reference:'campusly-numbered',levels:[{level:0,format:'decimal',text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:720,hanging:360}}}}]}]},sections:[{properties:{page:{margin:{top:1701,right:1701,bottom:1701,left:2268}}},children}]});
-  return Packer.toBuffer(doc);
-}
-function pdfEscape(text){return String(text).normalize('NFKD').replace(/[^\x20-\x7E\n]/g,' ').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');}
-function wrapLines(text,max=82){const out=[];for(const raw of clean(text).split('\n')){if(!raw.trim()){out.push('');continue;}let line=raw.trim();while(line.length>max){let cut=line.lastIndexOf(' ',max);if(cut<20)cut=max;out.push(line.slice(0,cut));line=line.slice(cut+1);}out.push(line);}return out;}
-function makePdf(text,title){
-  const lines=wrapLines(text),pages=[];for(let i=0;i<lines.length;i+=42)pages.push(lines.slice(i,i+42));if(!pages.length)pages.push(['']);
-  const objects=[];const add=x=>{objects.push(x);return objects.length};const regular=add('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>'),bold=add('<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >>');const pageRefs=[];
-  for(const pageLines of pages){const stream=['BT','/F2 16 Tf','1 0 0 1 70 770 Tm',`(${pdfEscape(title||'Campusly')}) Tj`,'/F1 10 Tf'];let y=745;for(const line of pageLines){if(!line){y-=14;continue;}stream.push(`1 0 0 1 70 ${y} Tm (${pdfEscape(line)}) Tj`);y-=14;}stream.push('ET');const body=stream.join('\n');const contents=add(`<< /Length ${Buffer.byteLength(body)} >>\nstream\n${body}\nendstream`);pageRefs.push(add(`<< /Type /Page /Parent PAGES /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${regular} 0 R /F2 ${bold} 0 R >> >> /Contents ${contents} 0 R >>`));}
-  const pagesId=add(`<< /Type /Pages /Kids [${pageRefs.map(x=>`${x} 0 R`).join(' ')}] /Count ${pageRefs.length} >>`);for(const ref of pageRefs)objects[ref-1]=objects[ref-1].replace('PAGES',`${pagesId} 0 R`);const root=add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
-  let output='%PDF-1.4\n',offset=Buffer.byteLength(output),xref=['0000000000 65535 f '];objects.forEach((obj,i)=>{xref.push(`${String(offset).padStart(10,'0')} 00000 n `);const chunk=`${i+1} 0 obj\n${obj}\nendobj\n`;output+=chunk;offset+=Buffer.byteLength(chunk);});output+=`xref\n0 ${objects.length+1}\n${xref.join('\n')}\ntrailer\n<< /Size ${objects.length+1} /Root ${root} 0 R >>\nstartxref\n${offset}\n%%EOF\n`;return Buffer.from(output);
-}
-function svgData(label,index){const palette=['8B7CFF','42D392','FFB45B','5EA1FF','FF6B7A'],color=palette[index%palette.length],safe=String(label||'Ilustrasi materi').replace(/[<>&]/g,'').slice(0,40);const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420"><rect width="720" height="420" rx="36" fill="#F4F6FA"/><rect x="42" y="42" width="636" height="336" rx="26" fill="#FFFFFF" stroke="#D9DEE8"/><circle cx="105" cy="105" r="30" fill="#${color}"/><rect x="160" y="84" width="360" height="22" rx="11" fill="#20242C"/><rect x="160" y="122" width="280" height="14" rx="7" fill="#B7BFCC"/><rect x="82" y="190" width="150" height="128" rx="18" fill="#${color}" opacity=".88"/><rect x="254" y="215" width="150" height="103" rx="18" fill="#E8EBF1"/><rect x="426" y="170" width="190" height="148" rx="18" fill="#EEF1F6"/><path d="M455 278l42-48 34 28 48-68 35 38" fill="none" stroke="#${color}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><text x="82" y="350" font-family="Arial" font-size="18" fill="#5F6877">${safe}</text></svg>`;return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;}
-function slideChunks(text){const source=clean(text);const parts=source.split(/\n\s*(?=SLIDE\s*\d+\s*[:.-])/i).filter(Boolean);return (parts.length?parts:[source]).slice(0,20);}
-async function makePptx(text,title){
-  const pptx=new PptxGenJS();pptx.layout='LAYOUT_WIDE';pptx.author='Campusly';pptx.company='Campusly';pptx.subject='Presentasi akademik';pptx.title=title||'Campusly';pptx.lang='id-ID';
-  for(const [index,chunk] of slideChunks(text).entries()){
-    const lines=chunk.split('\n').map(x=>x.trim()).filter(Boolean);let heading=(lines.shift()||`Slide ${index+1}`).replace(/^SLIDE\s*\d+\s*[:.-]\s*/i,'');
-    const visual=lines.find(x=>/^VISUAL:/i.test(x))?.replace(/^VISUAL:\s*/i,'')||'Ilustrasi materi';
-    const bullets=lines.filter(x=>!/^VISUAL:/i.test(x)).map(x=>x.replace(/^[-*•]\s*/,'' )).filter(Boolean).slice(0,5);
-    const slide=pptx.addSlide();slide.background={color:'FFFFFF'};slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:.2,h:7.5,fill:{color:'8B7CFF'},line:{color:'8B7CFF'}});slide.addText(String(index+1).padStart(2,'0'),{x:.7,y:.35,w:.5,h:.3,fontFace:'Aptos',fontSize:10,bold:true,color:'8B7CFF',margin:0});slide.addText(heading,{x:.7,y:.75,w:7,h:.75,fontFace:'Aptos Display',fontSize:27,bold:true,color:'171A22',margin:0,fit:'shrink'});
-    slide.addText((bullets.length?bullets:['Materi dapat disesuaikan sesuai kebutuhan.']).map(x=>`• ${x}`).join('\n'),{x:.8,y:1.75,w:6.1,h:4.5,fontFace:'Aptos',fontSize:18,color:'343941',margin:0,fit:'shrink',valign:'top',paraSpaceAfterPt:10});slide.addImage({data:svgData(visual,index),x:7.55,y:1.65,w:4.9,h:2.86});slide.addText(visual,{x:7.7,y:4.75,w:4.45,h:.7,fontFace:'Aptos',fontSize:10,color:'697386',margin:0,fit:'shrink'});slide.addText('Campusly',{x:7.7,y:6.85,w:2,h:.3,fontFace:'Aptos',fontSize:9,color:'9DA7B8',margin:0});
-  }
-  return pptx.write({outputType:'nodebuffer'});
-}
-function serveStatic(res,url){const file=url.pathname==='/'?'index.html':url.pathname.slice(1);if(!PUBLIC_FILES.has(file))return false;const full=path.join(ROOT,file);if(!fs.existsSync(full))return false;res.writeHead(200,{'Content-Type':MIME[path.extname(full)]||'application/octet-stream','Cache-Control':'no-store, no-cache, must-revalidate','Pragma':'no-cache','Expires':'0'});fs.createReadStream(full).pipe(res);return true;}
-function sendFile(res,data,type,filename){if(!Buffer.isBuffer(data)||!data.length)throw fail('File hasil export kosong.',500);res.writeHead(200,{'Content-Type':type,'Content-Disposition':`attachment; filename="${filename}"`,'Content-Length':data.length,'Cache-Control':'no-store, no-transform','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'*'});res.end(data);}
-const server=http.createServer(async(req,res)=>{
-  try{
-    securityHeaders(res);const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-    if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});return res.end();}
-    if(req.method==='GET'&&url.pathname==='/api/health')return json(res,200,{ok:true,version:'canonical-v11'});
-    if(req.method==='GET'&&url.pathname==='/api/ready')return json(res,200,{ready:true,version:'canonical-v11',models:models(),exports:['docx','pdf','pptx'],download:'native-browser'});
-    if(req.method==='GET'&&url.pathname==='/api/ai/health')return json(res,200,{ok:true,models:models(),vision:visionModels(),imageGeneration:false,exports:['docx','pdf','pptx']});
-    if(req.method==='POST'&&url.pathname==='/api/ai'){if(!rate(req))return json(res,429,{error:'AI lagi ramai. Coba lagi sebentar.'});return json(res,200,{ok:true,text:await callGemini(await readJson(req))});}
-    if(req.method==='POST'&&url.pathname==='/api/ai/vision'){if(!rate(req,20))return json(res,429,{error:'Scan lagi ramai. Coba lagi sebentar.'});return json(res,200,{ok:true,text:await callVision(await readJson(req))});}
-    if(req.method==='POST'&&url.pathname==='/api/export/docx'){const body=await readJson(req);if(!String(body.content||'').trim())throw fail('Isi makalah kosong.',400);return sendFile(res,await makeDocx(body.content,body.title||'Campusly'),'application/vnd.openxmlformats-officedocument.wordprocessingml.document','campusly-makalah.docx');}
-    if(req.method==='POST'&&url.pathname==='/api/export/pdf'){const body=await readJson(req);if(!String(body.content||'').trim())throw fail('Isi makalah kosong.',400);return sendFile(res,makePdf(body.content,body.title||'Campusly'),'application/pdf','campusly-makalah.pdf');}
-    if(req.method==='POST'&&url.pathname==='/api/export/ppt'){const body=await readJson(req);if(!String(body.content||'').trim())throw fail('Materi PPT kosong.',400);return sendFile(res,await makePptx(body.content,body.title||'Campusly'),'application/vnd.openxmlformats-officedocument.presentationml.presentation','campusly-presentasi.pptx');}
-    if(req.method==='GET'&&serveStatic(res,url))return;
-    return json(res,404,{error:'Not found'});
-  }catch(error){console.error('Campusly server error:',error);if(!res.headersSent)return json(res,error.status||500,{error:error.message||'Internal server error'});res.destroy();}
-});
-server.listen(PORT,'0.0.0.0',()=>console.log(`Campusly canonical-v11 server listening on ${PORT}`));
-function shutdown(){server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),3000).unref();}
-process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
