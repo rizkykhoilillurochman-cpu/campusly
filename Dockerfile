@@ -2,9 +2,10 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
+RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
-COPY *.js *.html *.css *.webmanifest *.svg .env.example README.md ./
+COPY . .
 RUN mkdir -p /app/data && chown -R node:node /app
 USER node
 EXPOSE 8787

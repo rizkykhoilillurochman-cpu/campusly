@@ -1,16 +1,17 @@
 {
   "name": "campusly",
-  "version": "8.0.0-clean",
+  "version": "9.0.0-ai2",
   "private": true,
-  "description": "Campusly student workspace with one canonical frontend, one AI server, Gemini, and document exports.",
+  "description": "Campusly student workspace with a canonical AI v2 pipeline and document exports.",
   "scripts": {
     "start": "node campusly-server-clean.js",
-    "check": "node --check campusly-server-clean.js && node --check campusly-v5.js && node --check tests/integration.js",
+    "check": "node --check campusly-server-clean.js && node --check campusly-v5.js && node --check campusly-ai-v2.js && node --check tests/integration.js",
     "test": "node tests/integration.js"
   },
   "engines": { "node": ">=22" },
   "dependencies": {
     "docx": "9.5.1",
+    "pdfkit": "0.17.2",
     "pptxgenjs": "4.0.1"
   }
 }
