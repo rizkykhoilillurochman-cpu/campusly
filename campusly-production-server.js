@@ -17,12 +17,21 @@ const nativeFetch = global.fetch;
 const hits = new Map();
 const retryable = new Set([408,429,500,502,503,504]);
 const SHUTDOWN_MODELS = new Set(['gemini-2.0-flash','gemini-2.0-flash-lite','gemini-2.0-flash-exp']);
+const LEGACY_RESTRICTED_MODELS = new Set(['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-2.5-pro']);
+const DEFAULT_MODEL = 'gemini-3.8-flash';
+const DEFAULT_FALLBACKS = ['gemini-3.7-flash','gemini-3.6-flash'];
 
 function models() {
-  return [...new Set([
-    process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-    ...(process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.7-flash,gemini-3.6-flash').split(',')
-  ].map(x => x.trim()).filter(Boolean).filter(x => !SHUTDOWN_MODELS.has(x)))];
+  const configured = String(process.env.GEMINI_MODEL || '').trim();
+  // Blitz may still contain an old environment value. Do not let a restricted
+  // Gemini 2.5 value take the whole AI gateway down for new API users.
+  const primary = !configured || LEGACY_RESTRICTED_MODELS.has(configured) || SHUTDOWN_MODELS.has(configured)
+    ? DEFAULT_MODEL
+    : configured;
+  const configuredFallbacks = String(process.env.GEMINI_FALLBACK_MODELS || '')
+    .split(',').map(x => x.trim()).filter(Boolean);
+  return [...new Set([primary, ...configuredFallbacks, ...DEFAULT_FALLBACKS])]
+    .filter(x => !SHUTDOWN_MODELS.has(x) && !LEGACY_RESTRICTED_MODELS.has(x));
 }
 function visionModels() { return models(); }
 
