@@ -1,11 +1,11 @@
 {
   "name": "campusly",
-  "version": "6.0.0-canonical",
+  "version": "7.0.0-clean",
   "private": true,
-  "description": "Campusly student workspace with one frontend, one server, Gemini AI, and document exports.",
+  "description": "Campusly student workspace with one frontend, one clean server, Gemini AI, and document exports.",
   "scripts": {
-    "start": "node campusly-start.js",
-    "check": "node --check campusly-production-server.js && node --check campusly-start.js && node --check campusly-v5.js && node --check tests/integration.js",
+    "start": "node campusly-server.js",
+    "check": "node --check campusly-server.js && node --check campusly-v5.js && node --check tests/integration.js",
     "test": "node tests/integration.js"
   },
   "engines": { "node": ">=22" },
