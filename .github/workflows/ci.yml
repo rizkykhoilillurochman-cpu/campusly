@@ -7,8 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  workflows: write
+  contents: read
 
 jobs:
   test:
@@ -28,32 +27,6 @@ jobs:
         run: node --version
       - name: Install dependencies
         run: npm install --omit=dev --no-audit --no-fund
-      - name: Final canonical cleanup
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('campusly-v5.js')
-          s=p.read_text()
-          pattern=r'\nasync function downloadExport\(path,payload,name,contentType\)\{.*?\}\nfunction render\('
-          ns,n=re.subn(pattern,'\nfunction render(',s,count=1,flags=re.S)
-          if n not in (0,1): raise SystemExit(f'Unexpected duplicate export blocks: {n}')
-          if n==1: s=ns
-          if s.count('function downloadExport(')!=1: raise SystemExit('downloadExport must have exactly one canonical implementation')
-          p.write_text(s)
-          Path('.github/workflows/canonical-cleanup.yml').unlink(missing_ok=True)
-          clean='''name: Campusly CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    strategy:\n      matrix:\n        node-version: [22]\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - name: Verify runtime\n        run: node --version\n      - name: Install dependencies\n        run: npm install --omit=dev --no-audit --no-fund\n      - name: Syntax check\n        run: npm run check\n      - name: Integration smoke test\n        run: npm test\n'''
-          Path('.github/workflows/ci.yml').write_text(clean)
-          PY
-          node --check campusly-v5.js
-          npm test
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add campusly-v5.js .github/workflows/ci.yml
-          git commit -m 'cleanup: remove duplicate export and temporary workflow'
-          git push
       - name: Syntax check
         run: npm run check
       - name: Integration smoke test
