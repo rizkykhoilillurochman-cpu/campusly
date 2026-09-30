@@ -2,6 +2,8 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 ENV DATA_DIR=/app/data
+# Force a fresh image when the deployment needs to pick up the current repository contents.
+ARG CAMPUSLY_BUILD_REV=2026-10-01
 RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
