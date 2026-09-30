@@ -1,43 +1,37 @@
 # Campusly
 
-Campusly is a responsive student workspace for tasks, schedules, notes, finances, tools, and AI.
+Campusly adalah workspace mahasiswa dengan satu frontend canonical dan satu production server.
 
-## Canonical structure
+## Struktur canonical
 
-The project intentionally keeps one frontend runtime and one production server:
+- `index.html` — satu entrypoint browser
+- `campusly-v5.js` — satu runtime frontend
+- `campusly-v5.css` — satu stylesheet
+- `campusly-production-server.js` — AI gateway dan export DOCX/PDF/PPTX
+- `tests/integration.js` — smoke test end-to-end
 
-- `index.html` — single browser entrypoint
-- `campusly-v5.js` — canonical frontend application
-- `campusly-v5.css` — canonical stylesheet
-- `campusly-production-server.js` — public server, AI gateway, and exports
-- `server.js` — internal static/core server
+Tidak ada overlay script, `*-fix.js`, service-worker patch, atau runtime server kedua.
 
-Do not add overlay scripts, `*-fix.js`, duplicate runtimes, or versioned service workers. Fix the canonical file instead.
+## Fitur inti
 
-## Run locally
+Beranda, Jadwal dengan validasi bentrok, Tugas, Kalender, AI chat, catatan, profil, dan export dokumen.
+
+Makalah/PPT memakai prompt formal KBBI/EYD. Chat biasa tetap bersifat percakapan.
+
+DOCX menggunakan Times New Roman, 12 pt, spasi 1,5, margin akademik, dan rata kanan-kiri. PPTX menggunakan layout 16:9, elemen visual, ikon/ilustrasi, dan objek yang tetap dapat diedit setelah dibuka di PowerPoint atau diimpor ke Canva.
+
+## Menjalankan
 
 ```bash
 npm install
 npm start
 ```
 
-Open `http://localhost:8787`.
+Set `GEMINI_API_KEY` pada environment server untuk AI.
 
-## Environment
-
-Set `GEMINI_API_KEY` on the server for AI features. Optional variables include `GEMINI_MODEL`, `GEMINI_FALLBACK_MODELS`, and `GEMINI_IMAGE_MODEL`.
-
-Never put provider secrets in frontend code.
-
-## Storage
-
-The current frontend is local-first and stores the workspace state in browser `localStorage`. No committed SQLite database or server-side JSON data store is part of the canonical baseline.
-
-## Quality checks
+## Pemeriksaan
 
 ```bash
 npm run check
 npm test
 ```
-
-The integration smoke test verifies the canonical entrypoint, health endpoint, AI gateway behavior without a key, and that removed legacy runtime paths are not exposed.
