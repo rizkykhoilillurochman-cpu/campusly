@@ -1,0 +1,38 @@
+name: Campusly canonical cleanup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove duplicate export implementation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('campusly-v5.js')
+          s=p.read_text()
+          pattern=r'\nasync function downloadExport\(path,payload,name,contentType\)\{.*?\}\nfunction render\('
+          ns,n=re.subn(pattern,'\nfunction render(',s,count=1,flags=re.S)
+          if n!=1:
+              raise SystemExit(f'Expected exactly one duplicate downloadExport block, found {n}')
+          if ns.count('function downloadExport(')!=1:
+              raise SystemExit('Canonical downloadExport count is not 1')
+          p.write_text(ns)
+          PY
+          node --check campusly-v5.js
+          npm test
+          git rm .github/workflows/canonical-cleanup.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add campusly-v5.js
+          git commit -m 'cleanup: keep one canonical export implementation'
+          git push
