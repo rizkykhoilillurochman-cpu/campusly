@@ -1,7 +1,4 @@
-/* Campusly — single production server.
- * Static app + Gemini AI + DOCX/PDF/PPTX exports.
- * No legacy model router, no duplicate runtime, no overlay patches.
- */
+/* Campusly production server — one server, one AI path, no model patcher. */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -10,23 +7,17 @@ const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = re
 
 const PORT = Number(process.env.PORT || 8787);
 const ROOT = __dirname;
-const MODEL = 'gemini-3.8-flash';
+const MODEL = 'gemini-3.7-flash';
 const MAX_BODY = 16 * 1024 * 1024;
 const PUBLIC = new Set(['index.html', 'campusly-v5.js', 'campusly-v5.css', 'manifest.webmanifest', 'icon.svg']);
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.svg': 'image/svg+xml'
-};
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8', '.svg': 'image/svg+xml' };
 const hits = new Map();
 const fail = (message, status = 500) => Object.assign(new Error(message), { status });
 
 function json(res, status, data) {
-  const buffer = Buffer.from(JSON.stringify(data));
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Length': buffer.length });
-  res.end(buffer);
+  const buf = Buffer.from(JSON.stringify(data));
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Length': buf.length });
+  res.end(buf);
 }
 function headers(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -45,9 +36,9 @@ function rateLimit(req, limit = 30) {
 }
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    const chunks = []; let size = 0;
-    req.on('data', chunk => { size += chunk.length; if (size > MAX_BODY) { reject(fail('Payload terlalu besar.', 413)); req.destroy(); return; } chunks.push(chunk); });
-    req.on('end', () => resolve(Buffer.concat(chunks)));
+    const chunks = []; let size = 0; let stopped = false;
+    req.on('data', chunk => { if (stopped) return; size += chunk.length; if (size > MAX_BODY) { stopped = true; reject(fail('Payload terlalu besar.', 413)); req.destroy(); return; } chunks.push(chunk); });
+    req.on('end', () => { if (!stopped) resolve(Buffer.concat(chunks)); });
     req.on('error', reject);
   });
 }
@@ -64,45 +55,61 @@ function textOnly(text) {
   return source.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/\s{2,}/g, ' ').trim();
 }
 function systemInstruction(mode) {
-  if (mode === 'paper') return 'Kamu adalah penulis akademik profesional berbahasa Indonesia. Tulis formal, objektif, natural, dan siap dimasukkan ke dokumen. Jangan mengarang sumber, DOI, URL, kutipan, data, atau fakta. Jangan menghasilkan HTML, XML, CSS, JavaScript, atau source code. Jika referensi tidak dapat diverifikasi, tandai sebagai perlu diverifikasi. Strukturkan dengan judul, abstrak, kata kunci, pendahuluan, pembahasan, kesimpulan, dan daftar pustaka.';
+  if (mode === 'paper') return 'Kamu adalah penulis akademik profesional berbahasa Indonesia. Tulis formal, objektif, natural, dan siap dimasukkan ke dokumen. Jangan mengarang sumber, DOI, URL, kutipan, data, atau fakta. Jika referensi tidak dapat diverifikasi, tandai sebagai perlu diverifikasi. Strukturkan dengan judul, abstrak, kata kunci, pendahuluan, pembahasan, kesimpulan, dan daftar pustaka.';
   if (mode === 'ppt') return 'Kamu adalah penyusun presentasi akademik profesional berbahasa Indonesia. Gunakan bahasa baku. Jangan menghasilkan HTML, XML, CSS, JavaScript, atau source code. Format wajib: SLIDE N: Judul, 3-5 bullet ringkas, lalu satu baris VISUAL: deskripsi ilustrasi. Jangan menambahkan komentar di luar slide.';
   if (mode === 'translate') return 'Kamu adalah penerjemah akademik. Pertahankan makna, struktur, istilah, dan tingkat formalitas. Jangan menambahkan komentar atau source code.';
-  return 'Kamu adalah Campusly AI, asisten kuliah untuk mahasiswa Indonesia. Jawab natural, jelas, akurat, dan langsung ke inti. Jangan mengarang fakta. Jangan mengeluarkan HTML, XML, CSS, JavaScript, atau source code halaman web. Jangan menulis tag html, head, body, script, atau style.';
+  return 'Kamu adalah Campusly AI, asisten kuliah untuk mahasiswa Indonesia. Jawab natural, jelas, akurat, dan langsung ke inti. Jangan mengarang fakta. Jangan mengeluarkan HTML, XML, CSS, JavaScript, atau source code halaman web.';
 }
 function conversation(messages) {
   return (Array.isArray(messages) ? messages : []).slice(-12).map(m => `${m?.role === 'assistant' ? 'Campusly AI' : 'Pengguna'}: ${String(m?.content ?? '').trim()}`).filter(Boolean).join('\n\n');
+}
+function geminiParts(data) {
+  const parts = Array.isArray(data?.parts) ? data.parts : [];
+  return parts.filter(Boolean);
 }
 async function gemini(input, mode = 'chat') {
   const key = String(process.env.GEMINI_API_KEY || '').trim();
   if (!key) throw fail('GEMINI_API_KEY belum diatur di environment server.', 503);
   const prompt = typeof input === 'string' ? input : conversation(input);
   if (!prompt.trim()) throw fail('Pesan AI kosong.', 400);
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({ model: MODEL, input: prompt, system_instruction: systemInstruction(mode), generation_config: { temperature: mode === 'chat' ? 0.35 : 0.2, thinking_level: mode === 'chat' ? 'low' : 'medium' }, store: false })
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+  const payload = {
+    systemInstruction: { parts: [{ text: systemInstruction(mode) }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  };
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify(payload)
   }).catch(e => { throw fail(`Tidak bisa menghubungi server AI: ${e.message || 'network error'}`, 502); });
-  const raw = await response.text(); let data = {}; try { data = JSON.parse(raw); } catch {}
-  if (!response.ok) throw fail(data?.error?.message || `Gemini HTTP ${response.status}`, response.status >= 500 ? 502 : response.status);
-  const text = textOnly(clean(data?.output_text || data?.steps?.findLast?.(s => s?.type === 'model_output')?.content?.map?.(x => x?.text || '').join('') || ''));
+
+  const raw = await response.text(); let data = {};
+  try { data = JSON.parse(raw); } catch {}
+  if (!response.ok) {
+    const message = data?.error?.message || `Gemini HTTP ${response.status}`;
+    console.error(`Gemini request failed (${MODEL}): ${message}`);
+    throw fail(`Gemini gagal: ${message}`, response.status >= 500 ? 502 : 502);
+  }
+  const text = textOnly(clean(data?.candidates?.[0]?.content?.parts?.map(p => p?.text || '').join('') || ''));
   if (!text) throw fail('Gemini mengembalikan respons kosong.', 502);
   if (isHtml(text)) throw fail('AI mengembalikan format halaman web, bukan jawaban teks.', 502);
   return text;
 }
-function imageInput(value) {
-  const match = String(value || '').match(/^data:([^;]+);base64,(.+)$/s);
-  if (!match) throw fail('Format gambar tidak valid.', 400);
-  return { type: 'image', mime_type: match[1], data: match[2] };
-}
 async function vision(dataIn) {
   const key = String(process.env.GEMINI_API_KEY || '').trim();
   if (!key) throw fail('GEMINI_API_KEY belum diatur di environment server.', 503);
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-    body: JSON.stringify({ model: MODEL, input: [imageInput(dataIn.image), { type: 'text', text: String(dataIn.question || 'Baca gambar ini dengan teliti, lalu jelaskan isi atau soal dan jawabannya dalam bahasa Indonesia.') }], system_instruction: 'Kamu adalah Campusly AI. Analisis gambar dengan teliti. Jika berisi soal, jelaskan langkah pengerjaan dan jawabannya. Jangan mengeluarkan HTML atau source code.', generation_config: { temperature: 0.2, thinking_level: 'low' }, store: false })
-  });
+  const match = String(dataIn?.image || '').match(/^data:([^;]+);base64,(.+)$/s);
+  if (!match) throw fail('Format gambar tidak valid.', 400);
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+  const payload = {
+    systemInstruction: { parts: [{ text: 'Kamu adalah Campusly AI. Analisis gambar dengan teliti. Jika berisi soal, jelaskan langkah pengerjaan dan jawabannya dalam bahasa Indonesia. Jangan mengeluarkan HTML atau source code.' }] },
+    contents: [{ role: 'user', parts: [{ inlineData: { mimeType: match[1], data: match[2] } }, { text: String(dataIn?.question || 'Baca gambar ini dengan teliti, lalu jelaskan isi atau soal dan jawabannya dalam bahasa Indonesia.') }] }]
+  };
+  const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(payload) });
   const raw = await response.text(); let data = {}; try { data = JSON.parse(raw); } catch {}
-  if (!response.ok) throw fail(data?.error?.message || `Gemini HTTP ${response.status}`, response.status >= 500 ? 502 : response.status);
-  const text = textOnly(clean(data?.output_text || data?.steps?.findLast?.(s => s?.type === 'model_output')?.content?.map?.(x => x?.text || '').join('') || ''));
+  if (!response.ok) { const message = data?.error?.message || `Gemini HTTP ${response.status}`; console.error(`Gemini vision failed (${MODEL}): ${message}`); throw fail(`Gemini gagal: ${message}`, 502); }
+  const text = textOnly(clean(data?.candidates?.[0]?.content?.parts?.map(p => p?.text || '').join('') || ''));
   if (!text) throw fail('Gemini tidak mengembalikan hasil pembacaan gambar.', 502);
   return text;
 }
@@ -114,9 +121,8 @@ function inlineRuns(text) {
 }
 async function exportDocx(res, data) {
   const content = String(data.content || '').trim(); if (!content) throw fail('Konten DOCX kosong.', 400);
-  const children = [];
-  for (const row of parseMarkdown(content)) { if (!row.s) children.push(new Paragraph({ text: '' })); else if (row.heading) children.push(new Paragraph({ text: row.heading, heading: HeadingLevel.HEADING_2 })); else if (row.bullet) children.push(new Paragraph({ children: inlineRuns(row.bullet), bullet: { level: 0 } })); else children.push(new Paragraph({ children: inlineRuns(row.s), alignment: AlignmentType.JUSTIFIED })); }
-  const buffer = await Packer.toBuffer(new Document({ sections: [{ properties: {}, children }] }));
+  const children = parseMarkdown(content).map(row => !row.s ? new Paragraph({ text: '' }) : row.heading ? new Paragraph({ text: row.heading, heading: HeadingLevel.HEADING_2 }) : row.bullet ? new Paragraph({ children: inlineRuns(row.bullet), bullet: { level: 0 } }) : new Paragraph({ children: inlineRuns(row.s), alignment: AlignmentType.JUSTIFIED }));
+  const buffer = await Packer.toBuffer(new Document({ sections: [{ children }] }));
   res.writeHead(200, { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition': 'attachment; filename="campusly-makalah.docx"', 'Content-Length': buffer.length, 'Cache-Control': 'no-store' }); res.end(buffer);
 }
 function pdfEscape(s) { return String(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/[^\x20-\x7E]/g, ' '); }
@@ -142,10 +148,10 @@ function serve(res, pathname) {
 async function route(req, res) {
   headers(res); const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`); const p = url.pathname;
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }); return res.end(); }
-  if (req.method === 'GET' && p === '/api/health') return json(res, 200, { ok: true, version: 'canonical-v10', model: MODEL });
+  if (req.method === 'GET' && p === '/api/health') return json(res, 200, { ok: true, version: 'canonical-v11', model: MODEL });
   if (req.method === 'GET' && p === '/api/ready') return json(res, 200, { ready: true, exports: ['docx', 'pdf', 'pptx'], ai: MODEL });
   if (req.method === 'GET' && p === '/api/ai/health') return json(res, 200, { ok: true, imageGeneration: false, model: MODEL, models: [MODEL] });
-  if (req.method === 'POST' && p === '/api/ai') { if (!rateLimit(req)) return json(res, 429, { error: 'Terlalu banyak permintaan. Tunggu sebentar.' }); try { const data = await body(req); return json(res, 200, { text: await gemini(data.messages, data.mode || 'chat') }); } catch (e) { return json(res, e.status || 500, { error: e.message || 'AI gagal.' }); } }
+  if (req.method === 'POST' && p === '/api/ai') { if (!rateLimit(req)) return json(res, 429, { error: 'Terlalu banyak permintaan. Tunggu sebentar.' }); try { const data = await body(req); return json(res, 200, { text: await gemini(data.messages ?? data.input, data.mode || 'chat') }); } catch (e) { return json(res, e.status || 500, { error: e.message || 'AI gagal.' }); } }
   if (req.method === 'POST' && p === '/api/ai/vision') { if (!rateLimit(req, 10)) return json(res, 429, { error: 'Terlalu banyak scan. Tunggu sebentar.' }); try { return json(res, 200, { text: await vision(await body(req)) }); } catch (e) { return json(res, e.status || 500, { error: e.message || 'Scan gagal.' }); } }
   if (req.method === 'POST' && p === '/api/export/docx') { try { return await exportDocx(res, await body(req)); } catch (e) { return json(res, e.status || 500, { error: e.message }); } }
   if (req.method === 'POST' && p === '/api/export/pdf') { try { return await exportPdf(res, await body(req)); } catch (e) { return json(res, e.status || 500, { error: e.message }); } }
@@ -155,6 +161,6 @@ async function route(req, res) {
 }
 const server = http.createServer((req, res) => route(req, res).catch(e => json(res, e.status || 500, { error: e.message || 'Server error.' })));
 server.keepAliveTimeout = 65000; server.headersTimeout = 66000;
-server.listen(PORT, '0.0.0.0', () => console.log(`Campusly canonical-v10 listening on ${PORT} — ${MODEL}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Campusly canonical-v11 listening on ${PORT} — ${MODEL}`));
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
 process.on('SIGINT', () => server.close(() => process.exit(0)));
