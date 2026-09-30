@@ -4,20 +4,20 @@ Campusly is a responsive student workspace for tasks, schedules, notes, finances
 
 ## Canonical structure
 
-Campusly intentionally has one frontend runtime and one production server:
+One frontend and one server only:
 
 - `index.html` — browser entrypoint
 - `campusly-v5.js` — canonical frontend application
 - `campusly-v5.css` — canonical stylesheet
-- `campusly-production-server.js` — static server, Gemini AI gateway, and exports
+- `campusly-server.js` — static server, Gemini gateway, and document exports
 
-There are no overlay scripts, `*-fix.js` files, duplicate runtimes, service-worker patches, or alternate AI model routers.
+No overlay AI routers, duplicate production servers, or startup shims are required.
 
 ## AI
 
-Campusly uses one stable production model: `gemini-3.8-flash`.
+Campusly uses a free-tier-compatible Gemini model chain. The primary model is `gemini-3.8-flash`, followed by stable Flash fallbacks if a model is unavailable or rate-limited.
 
-Only `GEMINI_API_KEY` is required. The application deliberately ignores legacy model environment variables so an old deployment setting cannot switch the app back to a restricted Gemini 2.x model.
+Only `GEMINI_API_KEY` is required. Keep the key in the server environment; never put it in frontend code.
 
 ## Run locally
 
@@ -36,12 +36,6 @@ PORT=8787
 GEMINI_API_KEY=your_key_here
 ```
 
-Never put provider secrets in frontend code.
-
-## Storage
-
-The frontend is local-first and stores workspace state in browser `localStorage`. No committed database or server-side workspace store is required.
-
 ## Quality checks
 
 ```bash
@@ -49,4 +43,4 @@ npm run check
 npm test
 ```
 
-The integration smoke test verifies the canonical entrypoint, health/readiness endpoints, AI key guard, export pipeline, and that removed legacy runtime paths are not exposed.
+The integration smoke test verifies the canonical server, health/readiness endpoints, missing-key guards, AI route aliases, and DOCX/PDF/PPTX exports.
