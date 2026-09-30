@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   test:
@@ -43,7 +44,7 @@ jobs:
           if s.count('function downloadExport(')!=1: raise SystemExit('downloadExport must have exactly one canonical implementation')
           p.write_text(s)
           Path('.github/workflows/canonical-cleanup.yml').unlink(missing_ok=True)
-          clean='''name: Campusly CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    strategy:\n      matrix:\n        node-version: [22]\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node-version }}\n      - name: Verify runtime\n        run: node --version\n      - name: Install dependencies\n        run: npm install --omit=dev --no-audit --no-fund\n      - name: Syntax check\n        run: npm run check\n      - name: Integration smoke test\n        run: npm test\n'''
+          clean='''name: Campusly CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    strategy:\n      matrix:\n        node-version: [22]\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - name: Verify runtime\n        run: node --version\n      - name: Install dependencies\n        run: npm install --omit=dev --no-audit --no-fund\n      - name: Syntax check\n        run: npm run check\n      - name: Integration smoke test\n        run: npm test\n'''
           Path('.github/workflows/ci.yml').write_text(clean)
           PY
           node --check campusly-v5.js
