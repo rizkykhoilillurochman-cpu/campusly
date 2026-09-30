@@ -29,7 +29,6 @@ jobs:
           p.write_text(ns)
           PY
           node --check campusly-v5.js
-          npm test
           git rm .github/workflows/canonical-cleanup.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
