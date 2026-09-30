@@ -10,9 +10,9 @@ let r=await req('GET','/');if(r.status!==200||!String(r.body).includes('Campusly
 r=await req('GET','/campusly-v5.js?v=test');if(r.status!==200||!String(r.body).includes('campusly_state_v6')||!String(r.body).includes('Beranda'))throw Error('frontend');
 r=await req('GET','/campusly-v5.css?v=test');if(r.status!==200||!String(r.body).includes('--accent')||!String(r.body).includes('.home-nav .ui-icon svg'))throw Error('stylesheet');
 for(const legacy of ['/app.js','/styles.css','/sw.js','/sw-v29.js','/sw-v30.js','/campusly-v5-final.js','/developer-contact.js','/runtime-fix.js']){r=await req('GET',legacy);if(r.status!==404)throw Error(`legacy path exposed: ${legacy}`)}
-r=await req('GET','/api/health');if(r.status!==200||!r.body.ok||r.body.version!=='canonical-v10')throw Error('health');
-r=await req('GET','/api/ready');if(r.status!==200||!r.body.ready||!r.body.exports.includes('docx')||!r.body.exports.includes('pptx'))throw Error('ready');
-r=await req('GET','/api/ai/health');if(r.status!==200||!r.body.ok||r.body.imageGeneration!==false||!Array.isArray(r.body.models))throw Error('AI health');
+r=await req('GET','/api/health');if(r.status!==200||!r.body.ok||r.body.version!=='canonical-v11'||r.body.model!=='gemini-3.7-flash')throw Error('health');
+r=await req('GET','/api/ready');if(r.status!==200||!r.body.ready||!r.body.exports.includes('docx')||!r.body.exports.includes('pptx')||r.body.ai!=='gemini-3.7-flash')throw Error('ready');
+r=await req('GET','/api/ai/health');if(r.status!==200||!r.body.ok||r.body.imageGeneration!==false||r.body.model!=='gemini-3.7-flash'||!Array.isArray(r.body.models))throw Error('AI health');
 r=await req('POST','/api/ai',{messages:[{role:'user',content:'halo'}]});if(r.status!==503)throw Error('AI key guard');
 r=await req('POST','/api/ai/image',{prompt:'test'});if(r.status!==404)throw Error('image endpoint');
 r=await req('POST','/api/export/docx',{title:'Tes',content:'# Judul\n\nAbstrak\n\nParagraf **tebal** dan *miring*.'});if(r.status!==200||!String(r.headers['content-type']).includes('wordprocessingml.document')||!String(r.headers['content-disposition']).includes('attachment')||r.bytes<1000)throw Error('DOCX export');
