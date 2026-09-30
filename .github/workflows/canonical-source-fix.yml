@@ -1,0 +1,34 @@
+name: canonical-source-fix
+on:
+  push:
+    branches: [main]
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix canonical frontend source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('campusly-v5.js')
+          s=p.read_text()
+          old="home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'"
+          new="home:'<path d=\"M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/>'"
+          if old not in s: raise SystemExit('home icon source not found')
+          s=s.replace(old,new,1)
+          old_dl="function downloadExport(path,payload,name,contentType){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify(payload)});if(!r.ok){const d=await r.json().catch(()=>null);throw Error(d?.error||`Export gagal (${r.status})`)}const blob=await r.blob();const ct=(r.headers.get('content-type')||'').toLowerCase();if(!blob.size)throw Error('Server mengembalikan file kosong.');if(contentType&&!ct.includes(contentType))throw Error(`Format file tidak sesuai (${ct||'tanpa content-type'}).`);downloadBlob(blob,name)}"
+          if old_dl not in s: raise SystemExit('download function source not found')
+          new_dl="function downloadExport(path,payload,name,contentType){const frame=document.createElement('iframe'),form=document.createElement('form'),target=`campusly-download-${Date.now()}`;frame.name=target;frame.style.display='none';form.method='POST';form.action=path;form.target=target;form.enctype='application/x-www-form-urlencoded';form.style.display='none';for(const [k,v] of Object.entries(payload||{})){const input=document.createElement('input');input.type='hidden';input.name=k;input.value=String(v??'');form.appendChild(input)}document.body.append(frame,form);form.submit();setTimeout(()=>{frame.remove();form.remove()},60000)}"
+          s=s.replace(old_dl,new_dl,1)
+          p.write_text(s)
+          PY
+          node --check campusly-v5.js
+          git rm .github/workflows/canonical-source-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add campusly-v5.js
+          git commit -m 'fix: restore home icon and native document downloads'
+          git push
