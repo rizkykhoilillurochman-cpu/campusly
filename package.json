@@ -5,10 +5,12 @@
   "description": "Campusly student workspace with a canonical AI v2 pipeline and document exports.",
   "scripts": {
     "start": "node campusly-server-clean.js",
-    "check": "node --check campusly-server-clean.js && node --check campusly-v5.js && node --check campusly-ai-v2.js && node --check tests/integration.js",
-    "test": "node tests/integration.js"
+    "check": "node --check campusly-server-clean.js && node --check server/config.cjs && node --check server/rate-limit.cjs && node --check server/job-store.cjs && node --check server/jobs.cjs && node --check server/http-security.cjs && node --check server/static.cjs && node --check server/ai-client.cjs && node --check server/prompts.cjs && node --check server/canva.cjs && node --check server/routes.cjs && node --check server/exports.cjs && node --input-type=module --check < campusly-bootstrap.js && node --input-type=module --check < campusly-store.js && node --input-type=module --check < campusly-dates.js && node --input-type=module --check < campusly-context.js && node --input-type=module --check < campusly-calculator.js && node --input-type=module --check < campusly-documents.js && node --input-type=module --check < campusly-v5.js && node --input-type=module --check < campusly-ai-v2.js && node --check tests/css-tokens.js && node --check tests/store.js && node --check tests/rate-limit.js && node --check tests/job-store.js && node --check tests/jobs-module.js && node --check tests/server-modules.js && node --check tests/ai-client.js && node --check tests/prompts.js && node --check tests/canva-module.js && node --check tests/routes.js && node --check tests/exports-module.js && node --check tests/timezone.js && node --check tests/context.js && node --check tests/calculator.js && node --check tests/integration.js",
+    "test": "node tests/css-tokens.js && node tests/calculator.js && node tests/timezone.js && node tests/context.js && node tests/store.js && node tests/rate-limit.js && node tests/job-store.js && node tests/jobs-module.js && node tests/server-modules.js && node tests/ai-client.js && node tests/prompts.js && node tests/canva-module.js && node tests/routes.js && node tests/exports-module.js && node tests/integration.js"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "docx": "9.5.1",
     "pdfkit": "0.17.2",

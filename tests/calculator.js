@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync(require.resolve('../campusly-calculator.js'), 'utf8').replace('export function evaluateExpression', 'function evaluateExpression');
+const context = { Math, Number, String, Object, Error };
+vm.runInNewContext(`${source};globalThis.evaluateExpression=evaluateExpression;`, context);
+const evaluate = context.evaluateExpression;
+assert.equal(evaluate('2+3*4'), 14);
+assert.equal(evaluate('sqrt(81)+log(100)'), 11);
+assert.ok(Math.abs(evaluate('sin(pi/2)') - 1) < 1e-12);
+assert.equal(evaluate('2^3^2'), 512);
+assert.throws(() => evaluate('globalThis.process.exit()'), /karakter/);
+assert.throws(() => evaluate('1/0'), /tidak bisa dihitung/);
+assert.throws(() => evaluate('(2+3'), /kurung/);
+console.log('Calculator grammar, precedence, functions, and unsafe input rejection passed.');
