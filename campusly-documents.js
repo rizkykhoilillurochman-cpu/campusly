@@ -1,4 +1,4 @@
-import { CampuslyStore } from './campusly-store.js?v=20261001-final1';
+import { CampuslyStore } from './campusly-store.js?v=20261002-mobile1';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 

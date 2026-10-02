@@ -6,4 +6,5 @@ campusly.sqlite
 *.sqlite-shm
 *.sqlite-wal
 data/
+.data/
 .DS_Store

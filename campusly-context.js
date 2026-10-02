@@ -1,4 +1,4 @@
-import { localDateKey } from './campusly-dates.js?v=20261001-final1';
+import { localDateKey } from './campusly-dates.js?v=20261002-mobile1';
 
 export function buildAIContext(state, date = new Date()) {
   const today = localDateKey(date);
