@@ -44,9 +44,10 @@ Set `AI_MOCK=1` to run deterministic local AI responses for integration tests wi
 - `GEMINI_MODEL` is an optional preference, not a hard-coded requirement.
 - Chat uses Gemini multi-turn `contents` with `user` / `model` roles, up to 12 recent clean turns, separate system instruction, optional minimized Campusly context, retry, timeout, and friendly errors. The context sent to AI is limited to preferred name, major, semester, and a small set of nearby tasks/classes; it excludes full name and student ID.
 - Long paper/PPT generation is asynchronous through `/api/jobs` and `/api/jobs/:id`.
-- Paper generation uses an outline → chapter generation → grounded references → polish pipeline and one shared document model for DOCX/PDF.
-- PPT generation uses structured JSON instead of `SLIDE N:` parsing, multiple layouts, theme tokens, speaker notes, native editable text/shapes, and optional Pexels images.
+- Paper generation uses an outline, one writing pass per chapter, and grounded references. It skips repeated chapter rewrites and a second whole-document AI pass to reduce wait time; review the draft and citations before submitting it.
+- PPT generation uses structured JSON instead of `SLIDE N:` parsing, multiple layouts, theme tokens, speaker notes, and native editable text/shapes. PPTX export uses local shapes and does not wait for external image searches.
 - Vision shares the same Gemini call/retry/timeout path and validates image type/size.
+- The phone layout uses compact home cards, a two-column AI tool grid, a keyboard-friendly full-height generator sheet, and explicit scan/export status messages.
 - Export endpoints are rate limited and size limited.
 - Canva integration uses OAuth 2.0 Authorization Code + PKCE and Canva Design Import when credentials are configured; otherwise PPTX download and manual import remain the fallback. Canva requires integration review before a public integration is available broadly; see [Canva's submission guidance](https://www.canva.dev/docs/connect/submitting-integrations/). Imported output should still be reviewed for layout fidelity.
 

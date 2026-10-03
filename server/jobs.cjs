@@ -25,7 +25,7 @@ function createJobs({ crypto, fail, safeError, jobStore, jobs, buildPaper, build
           job.progress = stage === 'outline' ? 35 : 70;
           void persistJobs();
         });
-        job.result = { kind: 'ppt', document: result.document };
+        job.result = { kind: 'ppt', document: result.document || result };
       }
       job.status = 'done';
       job.progress = 100;

@@ -9,7 +9,7 @@ const manager = createJobs({
   crypto: { randomUUID }, fail, safeError: error => error.message,
   jobStore: { save: async () => { saves += 1; } }, jobs,
   buildPaper: async (input, progress) => { progress('outline', 'Menyusun…'); return { document: { title: input.topic }, groundingOk: true }; },
-  buildPpt: async input => ({ document: { title: input.topic } }),
+  buildPpt: async input => ({ title: input.topic, slides: [] }),
   concurrency: 1, maxJobs: 2
 });
 
@@ -25,6 +25,11 @@ async function waitFor(job) {
   assert.deepEqual(job.result.document, { title: 'Uji' });
   assert.equal(job.input, undefined);
   assert.ok(saves >= 3);
+
+  const pptId = await manager.createJob('ppt', { topic: 'Presentasi Uji' });
+  await waitFor(jobs.get(pptId));
+  assert.equal(jobs.get(pptId).status, 'done');
+  assert.deepEqual(jobs.get(pptId).result.document, { title: 'Presentasi Uji', slides: [] });
 
   jobs.set('interrupted-1', { id: 'interrupted-1', status: 'interrupted', input: { topic: 'Lanjut' } });
   await manager.resumeJob('interrupted-1');
